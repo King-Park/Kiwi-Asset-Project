@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/nanumsquare.css');
+
+:root {
+    --primary-color: #1A3636;   
+    --accent-color: #C3F400;    
+    --bg-color: #F4F6F8;        
+    --card-bg: #FFFFFF;         
+    --text-color: #111827;      
+    --text-muted: #6B7280;      
+    --border-radius: 12px;      
+}
+
+body { 
+    font-family: 'Manrope', 'NanumSquare', sans-serif; 
+    background-color: var(--bg-color); 
+    color: var(--text-color); 
+    margin: 0; 
+    padding-bottom: 90px; /* 하단 네비 공간 */
+}
+
+/* 상단 가짜 앱 헤더 */
+body::before {
+    content: '🕵🏻‍♂️ THE KINETIC AUDITOR 🔔';
+    display: flex; justify-content: space-between;
+    background: #5E7171; color: var(--accent-color);
+    font-weight: 800; font-size: 14px; padding: 20px;
+    letter-spacing: 1px; position: sticky; top: 0; z-index: 1000;
+}
+
+.container { max-width: 600px; margin: 0 auto; padding: 20px 15px; }
+.page { display: none; }
+.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+h2 { font-size: 22px; font-weight: 800; border-left: 4px solid var(--accent-color); padding-left: 10px; margin-bottom: 20px; }
+h3 { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-top: 35px; margin-bottom: 15px; text-transform: uppercase; }
+
+/* 하단 네비게이션 */
+nav { 
+    position: fixed; bottom: 0; left: 0; width: 100%; 
+    background: #5E7171; padding: 15px 0 25px 0; 
+    display: flex; justify-content: space-evenly; 
+    border-radius: 24px 24px 0 0; z-index: 1001; 
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+}
+nav span { 
+    color: #A9B4B4; font-size: 10px; font-weight: 700; 
+    display: flex; flex-direction: column; align-items: center; gap: 6px; 
+    cursor: pointer; transition: 0.2s;
+}
+nav span::before { font-size: 22px; filter: grayscale(1) opacity(0.5); }
+nav span:nth-child(1)::before { content: '📊'; }
+nav span:nth-child(2)::before { content: '🏦'; }
+nav span:nth-child(3)::before { content: '📈'; }
+nav span:nth-child(4)::before { content: '💳'; }
+nav span:nth-child(5)::before { content: '🏠'; }
+nav span:hover { color: var(--accent-color); }
+nav span:hover::before { filter: grayscale(0) opacity(1); }
+
+/* 폼 & 입력 그리드 (2열) */
+.form-card { 
+    background: var(--card-bg); border-radius: var(--border-radius); 
+    padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;
+}
+input, select { 
+    background: #F4F6F8; border: 1px solid #eee; border-radius: 8px; 
+    padding: 14px; font-size: 14px; font-family: inherit; width: 100%; box-sizing: border-box;
+}
+input[type="text"], button { grid-column: 1 / -1; }
+button { 
+    background: var(--primary-color); color: white; padding: 16px; 
+    border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+}
+button:hover { opacity: 0.9; }
+
+/* 토글 버튼 (명세서/건별) */
+.toggle-group { display: flex; background: #F4F6F8; padding: 4px; border-radius: 10px; margin-bottom: 20px; }
+.toggle-group button { background: transparent; color: var(--text-muted); font-weight: 700; padding: 12px; box-shadow: none; border-radius: 8px; flex: 1; }
+.toggle-group button.active-toggle, button[style*="var(--primary-color)"] { background: var(--primary-color) !important; color: white !important; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+/* 대시보드 스페셜 카드 */
+.top-dash { 
+    background: var(--primary-color); border-radius: var(--border-radius); 
+    padding: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;
+}
+.top-dash .stat-card { background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; }
+.top-dash div { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+.top-dash .total-amount { color: var(--accent-color) !important; font-size: 24px; font-weight: 800; }
+
+.stat-card { background: var(--card-bg); padding: 20px; border-radius: var(--border-radius); margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+.stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee; font-size: 14px; font-weight: 600;}
+
+/* 모바일 카드 리스트 변환 마법 */
+table { display: block; width: 100%; border: none; }
+thead { display: none; } 
+tbody { display: flex; flex-direction: column; gap: 12px; }
+tr { 
+    display: grid; grid-template-columns: 45px 1fr auto; 
+    grid-template-areas: "icon name amount" "icon date date" "btns btns btns"; 
+    background: var(--card-bg); padding: 16px; border-radius: var(--border-radius); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03); align-items: center; column-gap: 12px;
+}
+td { border: none; padding: 0; text-align: left; }
+tr::before { 
+    content: '🧾'; grid-area: icon; background: #F4F6F8; 
+    width: 45px; height: 45px; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center; font-size: 20px; 
+}
+td:nth-child(1) { grid-area: date; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+td:nth-child(2) { grid-area: name; font-weight: 800; font-size: 16px; color: var(--text-color); }
+td:nth-child(3) { grid-area: amount; font-weight: 800; font-size: 16px; text-align: right; }
+td:nth-child(4), td:nth-child(5) { grid-area: date; font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-left: 5px; display: inline-block; }
+td:nth-child(4)::before { content: ' • '; }
+
+/* 요약 테이블 예외 처리 */
+.summary-table tr { display: flex; flex-direction: column; }
+.summary-table td { width: 100%; padding: 5px 0; }
+.summary-table tr::before { display: none; }
+
+/* 버튼 영역 */
+td:last-child { grid-area: btns; display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #eee; }
+.btn-edit, .btn-delete { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; width: auto; }
+.btn-edit { background: #E5E7EB; color: var(--primary-color); }
+.btn-delete { background: #FEE2E2; color: #DC2626; }
+.edit-mode { background: var(--accent-color) !important; color: var(--primary-color) !important; }
+
