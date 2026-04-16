@@ -9,143 +9,92 @@
 <body>
 
 <div class="container">
-    
-    <div id="dashboard" class="page active">
-        <h2>대시보드</h2>
-        
-        <div class="dashboard-grid top-dash">
-            <div class="stat-card">
-                <div>현재 총 순자산</div>
-                <div id="total-assets" class="total-amount">0원</div>
-            </div>
-            <div class="stat-card">
-                <div>이번 달 총 저축</div>
-                <div id="cur-save" class="total-amount highlight-blue">0원</div>
-            </div>
-        </div>
+    <div id="auth-overlay" class="page active" style="text-align: center; padding: 100px 20px;">
+        <h1 style="color: var(--primary-color);">Evergreen Quant</h1>
+        <p>안전한 운용을 위해 구글 로그인이 필요합니다.</p>
+        <button id="login-btn" style="margin-top: 20px; padding: 15px 30px; font-size: 16px;">Google 계정으로 시작하기</button>
+    </div>
 
-        <div class="dashboard-grid">
-            <div class="stat-card">
-                <h3>이번 달 소비 현황</h3>
-                <div class="stat-row"><span>총 소비액</span> <span id="cur-spend" class="highlight-red">0원</span></div>
+    <div id="app-content" style="display: none;">
+        <div id="dashboard" class="page active">
+            <h2>대시보드</h2>
+            <div class="dashboard-grid top-dash">
+                <div class="stat-card"><div>현재 총 순자산</div><div id="total-assets" class="total-amount">0원</div></div>
+                <div class="stat-card"><div>이번 달 총 저축</div><div id="cur-save" class="total-amount" style="color:var(--accent-color) !important;">0원</div></div>
             </div>
-            <div class="stat-card">
-                <h3>최근 3개월 평균</h3>
-                <div class="stat-row"><span>월 평균 저축</span> <span id="avg-save">0원</span></div>
-                <div class="stat-row"><span>월 평균 소비</span> <span id="avg-spend">0원</span></div>
+            <div class="chart-card">
+                <h3 class="chart-title">자산 포트폴리오 비중</h3>
+                <div class="donut-container">
+                    <div id="asset-donut-chart" class="donut-chart">
+                        <div class="donut-inner"><span class="donut-label">TOTAL</span><span class="donut-value">100%</span></div>
+                    </div>
+                </div>
+                <div id="donut-legend" class="donut-legend-list"></div>
             </div>
         </div>
 
-        <div class="pie-chart-container" style="display:none;">
-            <div id="asset-pie-chart" class="pie-chart"></div>
-            <div id="ratio-legend" class="legend"></div>
+        <div id="bank" class="page">
+            <h2>은행 계좌 관리</h2>
+            <div class="form-card input-group">
+                <input type="month" id="bank-month"><input type="text" id="bank-name" placeholder="은행명">
+                <input type="number" id="bank-amount" placeholder="금액(KRW)"><input type="text" id="bank-note" placeholder="비고">
+                <button onclick="handleAddData('bank')" id="bank-btn">기록 추가</button>
+            </div>
+            <table id="bank-table"><tbody></tbody></table>
+        </div>
+
+        <div id="stock" class="page">
+            <h2>보유 주식 관리</h2>
+            <div class="form-card input-group">
+                <input type="month" id="stock-month"><input type="text" id="stock-name" placeholder="종목명">
+                <input type="number" id="stock-count" placeholder="수량"><input type="number" id="stock-avg" placeholder="평단가">
+                <input type="number" id="stock-current" placeholder="현재가">
+                <button onclick="handleAddData('stock')" id="stock-btn">업데이트</button>
+            </div>
+            <table id="stock-summary-table" class="summary-table"><tbody></tbody></table>
+            <table id="stock-table"><tbody></tbody></table>
+        </div>
+
+        <div id="card" class="page">
+            <h2>지출 관리</h2>
+            <div class="toggle-group">
+                <button id="mode-individual-btn" onclick="toggleCardMode('individual')" class="active-toggle">건별 입력</button>
+                <button id="mode-final-btn" onclick="toggleCardMode('final')">명세서 입력</button>
+            </div>
+            <div id="card-individual-entry" class="form-card input-group">
+                <input type="date" id="card-date"><input type="text" id="card-name" placeholder="카드사">
+                <input type="number" id="card-amount" placeholder="금액"><select id="card-cat"><option>식비</option><option>교통</option><option>쇼핑</option><option>기타</option></select>
+                <button onclick="handleAddData('card')" id="card-btn">추가하기</button>
+            </div>
+            <div id="card-final-entry" class="form-card input-group" style="display:none;">
+                <input type="month" id="card-final-month"><input type="text" id="card-final-name" placeholder="카드사 명">
+                <input type="number" id="card-final-amount" placeholder="명세서 총액">
+                <button onclick="addFinalCardAmount()" id="card-final-btn">입력</button>
+            </div>
+            <table id="card-summary-table" class="summary-table"><tbody></tbody></table>
+            <table id="card-table"><tbody></tbody></table>
+        </div>
+
+        <div id="rent" class="page">
+            <h2>거주 관리</h2>
+            <div class="form-card input-group">
+                <input type="month" id="rent-month"><input type="text" id="rent-type" placeholder="유형"><input type="number" id="rent-deposit" placeholder="보증금"><input type="number" id="rent-monthly" placeholder="월세">
+                <button onclick="handleAddData('rent')" id="rent-btn">기록하기</button>
+            </div>
+            <table id="rent-table"><tbody></tbody></table>
         </div>
     </div>
-
-    <div id="bank" class="page">
-        <h2>은행 계좌 관리</h2>
-        <div class="form-card input-group">
-            <input type="month" id="bank-month">
-            <input type="text" id="bank-name" placeholder="은행명">
-            <input type="number" id="bank-amount" placeholder="금액(KRW)">
-            <input type="text" id="bank-note" placeholder="비고(용도)">
-            <button onclick="addData('bank')" id="bank-btn">기록 추가</button>
-        </div>
-        <h3>계좌 내역</h3>
-        <table id="bank-table">
-            <thead><tr><th>날짜</th><th>은행</th><th>금액</th><th>비고</th><th>관리</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div id="stock" class="page">
-        <h2>보유 주식 관리</h2>
-        <div class="form-card input-group">
-            <input type="month" id="stock-month">
-            <input type="text" id="stock-name" placeholder="종목명">
-            <input type="number" id="stock-count" placeholder="수량">
-            <input type="number" id="stock-avg" placeholder="매수평균가">
-            <input type="number" id="stock-current" placeholder="현재가">
-            <button onclick="addData('stock')" id="stock-btn">포트폴리오 업데이트</button>
-        </div>
-        
-        <h3>보유 종목 요약</h3>
-        <table id="stock-summary-table" class="summary-table">
-            <thead><tr><th>종목명</th><th>수량</th><th>평단가</th><th>투자금</th><th>평가금</th><th>수익</th></tr></thead>
-            <tbody></tbody>
-        </table>
-
-        <h3>상세 거래 내역</h3>
-        <table id="stock-table">
-            <thead><tr><th>날짜</th><th>종목</th><th>수량</th><th>투자금</th><th>평가금</th><th>수익</th><th>관리</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div id="card" class="page">
-        <h2>지출 관리</h2>
-
-        <div class="toggle-group">
-            <button id="mode-individual-btn" onclick="toggleCardMode('individual')" class="active-toggle">건별 입력</button>
-            <button id="mode-final-btn" onclick="toggleCardMode('final')">명세서 불러오기</button>
-        </div>
-        
-        <div id="card-individual-entry" class="form-card input-group">
-            <input type="date" id="card-date"> 
-            <input type="text" id="card-name" placeholder="카드사 (예: 신한, 현대)">
-            <input type="number" id="card-amount" placeholder="결제 금액(KRW)">
-            <select id="card-cat">
-                <option>식비</option><option>교통</option><option>쇼핑</option><option>생활</option><option>기타</option>
-            </select>
-            <button onclick="addData('card')" id="card-btn">내역 추가하기</button>
-        </div>
-
-        <div id="card-final-entry" class="form-card input-group" style="display:none;">
-            <input type="month" id="card-final-month">
-            <input type="text" id="card-final-name" placeholder="카드사 명">
-            <input type="number" id="card-final-amount" placeholder="명세서 총액(KRW)">
-            <button onclick="addFinalCardAmount()" id="card-final-btn">차액 자동 추가</button>
-        </div>
-
-        <h3>카드사별 이용 현황</h3>
-        <table id="card-summary-table" class="summary-table">
-            <thead><tr><th>카드사</th><th>총 소비액</th><th>분류별 비중</th></tr></thead>
-            <tbody></tbody>
-        </table>
-
-        <h3>최근 이용 내역</h3>
-        <table id="card-table">
-            <thead><tr><th>결제일</th><th>카드사</th><th>금액</th><th>분류</th><th>관리</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div id="rent" class="page">
-        <h2>거주 및 임대료 관리</h2>
-        <div class="form-card input-group">
-            <input type="month" id="rent-month">
-            <input type="text" id="rent-type" placeholder="거주지 유형 (예: 오피스텔)">
-            <input type="number" id="rent-deposit" placeholder="보증금 (자산)">
-            <input type="number" id="rent-monthly" placeholder="당월 임대료 (지출)">
-            <button onclick="addData('rent')" id="rent-btn">납부 내역 기록하기</button>
-        </div>
-        <h3>납부 내역 (Recent History)</h3>
-        <table id="rent-table">
-            <thead><tr><th>날짜</th><th>유형</th><th>보증금</th><th>월세</th><th>관리</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
 </div>
 
-<nav>
+<nav id="main-nav" style="display: none;">
     <span onclick="showPage('dashboard')">DASHBOARD</span>
     <span onclick="showPage('bank')">ACCOUNTS</span>
     <span onclick="showPage('stock')">STOCKS</span>
     <span onclick="showPage('card')">SPENDING</span>
     <span onclick="showPage('rent')">HOUSING</span>
+    <span id="logout-btn" style="color: #ff8888; font-size: 9px;">LOGOUT</span>
 </nav>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
