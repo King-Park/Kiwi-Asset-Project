@@ -21,23 +21,48 @@ let currentUser = null;
 let currentDbData = { bank: [], stock: [], card: [], rent: [] };
 let editInfo = { type: null, id: null };
 
+// --- 샘플 데이터 정의 ---
+const sampleData = {
+    bank: [{ name: "샘플은행", amount: 5000000, month: "2024-05", note: "예시 데이터" }],
+    stock: [{ name: "삼성전자", count: 10, investment: 700000, currentVal: 850000, month: "2024-05" }],
+    card: [{ name: "현대카드", amount: 150000, date: "2024-05-01", cat: "식비", month: "2024-05" }],
+    rent: [{ type: "전세", deposit: 100000000, monthly: 0, month: "2024-05" }]
+};
+
 // --- 2. 로그인/로그아웃 처리 ---
-document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
+// 로그인 버튼 함수를 전역으로 노출
+window.handleGoogleLogin = () => signInWithPopup(auth, provider);
 document.getElementById('logout-btn').onclick = () => { if(confirm("로그아웃 하시겠습니까?")) signOut(auth); };
 
 onAuthStateChanged(auth, (user) => {
+    const userDisplay = document.getElementById('user-display');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const overlay = document.getElementById('login-needed-banner');
+    const nav = document.getElementById('main-nav');
+
     if (user) {
+        // 1. 로그인 성공 시
         currentUser = user;
-        document.getElementById('auth-overlay').style.display = 'none';
-        document.getElementById('app-content').style.display = 'block';
-        document.getElementById('main-nav').style.display = 'flex';
-        initInputs();
-        syncData(); // 실시간 데이터 연결
+        userDisplay.innerText = user.email.split('@')[0].toUpperCase(); // ID 표시
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        overlay.style.display = 'none'; // 배너 숨기기
+        nav.style.display = 'flex';     // 메뉴 보이기
+        syncData(); 
     } else {
+        // 2. 로그아웃 또는 비로그인 시
         currentUser = null;
-        document.getElementById('auth-overlay').style.display = 'block';
-        document.getElementById('app-content').style.display = 'none';
-        document.getElementById('main-nav').style.display = 'none';
+        userDisplay.innerText = "GUEST MODE";
+        loginBtn.style.display = 'block';
+        logoutBtn.style.display = 'none';
+        overlay.style.display = 'flex'; // 배너 보이기 (GUEST 모드)
+        nav.style.display = 'none';      // 메뉴 숨기기
+        
+        // 샘플 데이터 연결
+        currentDbData = JSON.parse(JSON.stringify(sampleData)); 
+        renderTables();
+        updateDashboard();
     }
 });
 

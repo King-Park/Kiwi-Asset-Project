@@ -8,14 +8,42 @@
 </head>
 <body>
 
+<header>
+    <div id="user-display">GUEST MODE</div>
+    <div class="header-btns">
+        <button id="login-btn">Google 로그인</button>
+        <button id="logout-btn" style="display: none;">로그아웃</button>
+    </div>
+</header>
+
+<!-- 중복되어 임시 주석처리
 <div class="container">
-    <div id="auth-overlay" class="page active" style="text-align: center; padding: 100px 20px;">
-        <h1 style="color: var(--primary-color);">Evergreen Quant</h1>
-        <p>안전한 운용을 위해 구글 로그인이 필요합니다.</p>
-        <button id="login-btn" style="margin-top: 20px; padding: 15px 30px; font-size: 16px;">Google 계정으로 시작하기</button>
+    <div id="login-needed-banner" style="display: none;">
+        <h2>📊 나만의 자산 관리를 시작하세요</h2>
+        <p>로그인하시면 실시간 데이터 저장 및 동기화가 가능합니다.</p>
+        <button onclick="handleGoogleLogin()" style="margin-top:20px; background: var(--primary-color); color: black;">지금 로그인하기</button>
     </div>
 
-    <div id="app-content" style="display: none;">
+    <div id="app-content">
+        <div id="dashboard" class="page active">
+            <h2>대시보드</h2>
+            ...
+        </div>
+    </div>
+</div>
+-->
+
+<div class="container">
+    <div id="login-needed-banner" style="display: none;">
+        <div class="banner-box"> 
+            <h2>DNN (돈내놔) 앱에 오신것을 환영함</h2>
+            <p>로그인 시 데이터 저장 및 동기화 가능</p>
+            <button onclick="handleGoogleLogin()">지금 로그인하기</button>
+        </div> 
+    </div>
+
+
+    <div id="app-content">
         <div id="dashboard" class="page active">
             <h2>대시보드</h2>
             <div class="dashboard-grid top-dash">
@@ -92,7 +120,6 @@
     <span onclick="showPage('stock')">STOCKS</span>
     <span onclick="showPage('card')">SPENDING</span>
     <span onclick="showPage('rent')">HOUSING</span>
-    <span id="logout-btn" style="color: #ff8888; font-size: 9px;">LOGOUT</span>
 </nav>
 
 <script type="module" src="script.js"></script>
