@@ -111,6 +111,33 @@
             </div>
             <table id="rent-table"><tbody></tbody></table>
         </div>
+
+        <div id="settings" class="page">
+            <h2>설정</h2>
+            
+            <div class="form-card">
+                <h3>내 프로필 정보</h3>
+                <p style="margin-bottom: 10px;">ID: <span id="settings-id" style="font-weight: bold; color: var(--primary-color);"></span></p>
+                <p>Email: <span id="settings-email" style="color: var(--text-muted);"></span></p>
+            </div>
+
+            <div class="form-card">
+                <h3>월별 데이터 삭제</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">삭제할 월과 항목을 선택해 주세요. (주의: 삭제된 데이터는 복구할 수 없습니다.)</p>
+                
+                <div class="input-group">
+                    <input type="month" id="delete-month">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+                        <label><input type="checkbox" class="delete-cat" value="bank"> 은행 계좌</label>
+                        <label><input type="checkbox" class="delete-cat" value="stock"> 주식 자산</label>
+                        <label><input type="checkbox" class="delete-cat" value="card"> 지출 내역</label>
+                        <label><input type="checkbox" class="delete-cat" value="rent"> 거주/월세</label>
+                    </div>
+                    <button onclick="handleMonthlyDelete()" style="background: #DC2626 !important; color: white;">선택 항목 삭제하기</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -120,6 +147,7 @@
     <span onclick="showPage('stock')">STOCKS</span>
     <span onclick="showPage('card')">SPENDING</span>
     <span onclick="showPage('rent')">HOUSING</span>
+    <span onclick="showPage('settings')">SETTINGS</span>
 </nav>
 
 <script type="module" src="script.js"></script>

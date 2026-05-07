@@ -99,6 +99,7 @@ nav span:nth-child(2)::before { content: '🏦'; }
 nav span:nth-child(3)::before { content: '📈'; }
 nav span:nth-child(4)::before { content: '💳'; }
 nav span:nth-child(5)::before { content: '🏠'; }
+nav span:nth-child(6)::before { content: '🏠'; }
 nav span:hover { color: var(--accent-color); }
 nav span:hover::before { filter: grayscale(0) opacity(1); }
 
@@ -123,6 +124,23 @@ button:hover { opacity: 0.9; }
 .toggle-group { display: flex; background: #F4F6F8; padding: 4px; border-radius: 10px; margin-bottom: 20px; }
 .toggle-group button { background: transparent; color: var(--text-muted); font-weight: 700; padding: 12px; box-shadow: none; border-radius: 8px; flex: 1; }
 .toggle-group button.active-toggle, button[style*="var(--primary-color)"] { background: var(--primary-color) !important; color: white !important; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+/* 설정 페이지 체크박스 스타일 */
+.delete-cat {
+    width: auto !important;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+#settings .form-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+#settings p {
+    font-size: 14px;
+}
 
 /* 대시보드 스페셜 카드 */
 .top-dash { 

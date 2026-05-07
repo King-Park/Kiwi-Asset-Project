@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; 
 
 // --- 1. 본인의 Firebase Config 정보를 여기에 붙여넣으세요 ---
 const firebaseConfig = {
@@ -45,6 +45,8 @@ onAuthStateChanged(auth, (user) => {
         // 1. 로그인 성공 시
         currentUser = user;
         userDisplay.innerText = user.email.split('@')[0].toUpperCase(); // ID 표시
+        document.getElementById('settings-id').innerText = user.email.split('@')[0];
+        document.getElementById('settings-email').innerText = user.email;
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'block';
         overlay.style.display = 'none'; // 배너 숨기기
@@ -212,3 +214,30 @@ function initInputs() {
 }
 function clearFields(type) { document.querySelectorAll(`#${type} input:not([type="month"]):not([type="date"])`).forEach(i => i.value = ''); }
 function renderStockSummary() {} function renderCardSummary() {} // 요약 로직 필요시 추가
+
+// 월별 데이터 일괄 삭제 기능
+window.handleMonthlyDelete = async function() {
+    const month = document.getElementById('delete-month').value;
+    const selectedCats = Array.from(document.querySelectorAll('.delete-cat:checked')).map(cb => cb.value);
+
+    if (!month || selectedCats.length === 0) {
+        alert("삭제할 월과 항목을 최소 하나 이상 선택해 주세요.");
+        return;
+    }
+
+    if (!confirm(`${month} 해당 항목의 모든 데이터를 삭제하시겠습니까?`)) return;
+
+    try {
+        for (const type of selectedCats) {
+            const q = query(collection(db, type), where("uid", "==", currentUser.uid), where("month", "==", month));
+            const querySnapshot = await getDocs(q);
+            
+            const deletePromises = querySnapshot.docs.map(d => deleteDoc(doc(db, type, d.id)));
+            await Promise.all(deletePromises);
+        }
+        alert("선택하신 데이터가 정상적으로 삭제되었습니다.");
+    } catch (error) {
+        console.error("Delete Error:", error);
+        alert("데이터 삭제 중 오류가 발생했습니다.");
+    }
+};
