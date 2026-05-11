@@ -203,6 +203,22 @@ button:hover { opacity: 0.9; }
     color: var(--primary-color);
 }
 
+#delete-data-card {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#settings #delete-data-card h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+#settings #delete-data-card p {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
 #settings p {
     font-size: 14px;
 }
