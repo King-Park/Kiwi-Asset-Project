@@ -10,6 +10,11 @@
     --text-muted: #6B7280;      
     --border-radius: 12px;      
 }
+/* 모든 요소의 여백을 포함하여 크기를 계산하도록 강제 ...해도 별 소용없던데 일단 주석처리
+* {
+    box-sizing: border-box;
+}
+*/
 
 /* 모바일 뷰 고정 (App Shell) */
 #app-shell {
@@ -108,7 +113,14 @@ body::before {
 }
 */
 
-.container { max-width: 600px; margin: 0 auto; padding: 20px 15px; }
+.container { 
+    max-width: 600px; 
+    margin: 0 auto; 
+    padding: 20px 25px;
+    width: 100%;
+    box-sizing: border-box;
+    padding-bottom: 100px;
+}
 .page { display: none; }
 .active { display: block; animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -137,13 +149,22 @@ nav span {
     display: flex; flex-direction: column; align-items: center; gap: 6px; 
     cursor: pointer; transition: 0.2s;
 }
+
+/* 네비게이션 활성화(Active) 상태 스타일 */
+nav span.active-nav {
+    color: var(--accent-color); /* 텍스트 색상을 형광 연두색으로 유지 */
+}
+nav span.active-nav::before {
+    filter: grayscale(0) opacity(1); /* 아이콘의 흑백 필터를 제거하고 선명하게 유지 */
+}
+
 nav span::before { font-size: 22px; filter: grayscale(1) opacity(0.5); }
 nav span:nth-child(1)::before { content: '📊'; }
 nav span:nth-child(2)::before { content: '🏦'; }
 nav span:nth-child(3)::before { content: '📈'; }
 nav span:nth-child(4)::before { content: '💳'; }
 nav span:nth-child(5)::before { content: '🏠'; }
-nav span:nth-child(6)::before { content: '🏠'; }
+nav span:nth-child(6)::before { content: '⚙️'; }
 nav span:hover { color: var(--accent-color); }
 nav span:hover::before { filter: grayscale(0) opacity(1); }
 
@@ -189,7 +210,7 @@ button:hover { opacity: 0.9; }
 /* 대시보드 스페셜 카드 */
 .top-dash { 
     background: var(--primary-color); border-radius: var(--border-radius); 
-    padding: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;
+    padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;
 }
 .top-dash .stat-card { background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; }
 .top-dash div { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 700; margin-bottom: 5px; }
@@ -197,6 +218,15 @@ button:hover { opacity: 0.9; }
 
 .stat-card { background: var(--card-bg); padding: 20px; border-radius: var(--border-radius); margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee; font-size: 14px; font-weight: 600;}
+
+/* 대시보드 차트 카드 규격 통일 */
+.chart-card {
+    background: var(--card-bg); 
+    border-radius: var(--border-radius); 
+    padding: 20px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+    margin-bottom: 20px;
+}
 
 /* 모바일 카드 리스트 변환 마법 */
 table { display: block; width: 100%; border: none; }
@@ -286,7 +316,7 @@ td:last-child { grid-area: btns; display: flex; justify-content: flex-end; gap: 
     #desktop-logo {
         display: none; /* 모바일에서는 좌측 로고를 숨김 */
     }
-    
+
     #app-shell, nav {
         left: 50% !important; /* 모바일에서는 다시 정중앙으로 복구 */
         transform: translateX(-50%) !important;

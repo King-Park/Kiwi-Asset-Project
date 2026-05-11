@@ -201,7 +201,24 @@ function updateDashboard() {
 }
 
 // 공통 유틸
-window.showPage = (id) => { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); };
+// 기존 window.showPage = (id) => { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); };
+
+window.showPage = (id) => { 
+    // 1. 화면 페이지 전환
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
+    document.getElementById(id).classList.add('active'); 
+
+    // 2. 하단 네비게이션 메뉴 활성화 상태 업데이트
+    document.querySelectorAll('#main-nav span').forEach(span => {
+        // 클릭된 메뉴의 onclick 속성에 해당 id가 포함되어 있으면 active-nav 클래스 추가
+        if (span.getAttribute('onclick') && span.getAttribute('onclick').includes(id)) {
+            span.classList.add('active-nav');
+        } else {
+            span.classList.remove('active-nav');
+        }
+    });
+};
+
 window.toggleCardMode = (mode) => { 
     document.getElementById('card-individual-entry').style.display = mode === 'individual' ? 'grid' : 'none'; 
     document.getElementById('card-final-entry').style.display = mode === 'final' ? 'grid' : 'none';
