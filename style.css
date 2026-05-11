@@ -11,7 +11,7 @@
     --border-radius: 12px;      
 }
 
-/* ✅ 모바일 뷰 고정 (App Shell) */
+/* 모바일 뷰 고정 (App Shell) */
 #app-shell {
     width: 100%;
     max-width: 480px; /* 일반적인 모바일 가로 너비로 고정 */
@@ -19,6 +19,9 @@
     background-color: var(--bg-color); /* 서비스 내부 배경색 */
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.3); /* 서비스 경계선 그림자 */
     position: relative;
+    left: 60%;
+    transform: translateX(-50%);
+    margin: 0;
     display: flex;
     flex-direction: column;
     overflow-x: hidden;
@@ -82,14 +85,17 @@ body {
     font-family: 'Manrope', 'NanumSquare', sans-serif;
     margin: 0;
     padding: 0;
-    /* ✅ 바탕화면 이미지 설정 */
+    /* 바탕화면 이미지 설정 */
     background-image: url('img/bg.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     /* 데스크톱에서 중앙 정렬을 위한 설정 */
-    display: flex;
+    display: block;
     justify-content: center;
+    position: relative;
+    width: 100%;
+    min-height: 100vh
 }
 
 /* 상단 가짜 앱 헤더 
@@ -116,7 +122,7 @@ nav {
     bottom: 0;
     width: 100%;
     max-width: 480px; /* app-shell 너비와 동일하게 설정 */
-    left: 50%;
+    left: 60%;
     transform: translateX(-50%); /* 화면 중앙 정렬 */
     background: #5E7171; padding: 15px 0 25px 0; 
     display: flex; justify-content: space-evenly; 
@@ -258,4 +264,32 @@ td:last-child { grid-area: btns; display: flex; justify-content: flex-end; gap: 
 
 .banner-box p {
     color: #666666; 
+}
+
+#desktop-logo {
+    position: fixed;
+    top: 50%;
+    left: 25%; /* 화면 좌측으로부터 25% 지점에 배치 */
+    transform: translate(-50%, -50%);
+    z-index: 0; /* 서비스 영역보다 뒤에 위치 */
+    pointer-events: none; /* 클릭 방해 금지 */
+}
+
+#desktop-logo img {
+    max-width: 280px; /* 로고 크기는 이미지에 맞춰 조절해 주세요 */
+    height: auto;
+    opacity: 0.9;
+}
+
+/* 화면 너비가 800px 이하인 기기(모바일/태블릿) 접속 시 강제로 중앙 정렬 및 꽉 차게 복구 */
+@media screen and (max-width: 700px) {
+    #desktop-logo {
+        display: none; /* 모바일에서는 좌측 로고를 숨김 */
+    }
+    
+    #app-shell, nav {
+        left: 50% !important; /* 모바일에서는 다시 정중앙으로 복구 */
+        transform: translateX(-50%) !important;
+        max-width: 100% !important; /* 모바일에서는 가로 폭을 화면에 꽉 채움 (선택사항) */
+    }
 }

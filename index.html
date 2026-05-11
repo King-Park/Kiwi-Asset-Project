@@ -8,151 +8,156 @@
     <link rel="icon" href="img/favicon.png" type="image/png">
 </head>
 <body>
-<div id="app-shell">
-    <header>
-        <div id="user-display">GUEST MODE</div>
-        <div class="header-btns">
-            <button id="login-btn">로그인(G)</button>
-            <button id="logout-btn" style="display: none;">로그아웃</button>
-        </div>
-    </header>
 
-    <!-- 중복되어 임시 주석처리
-    <div class="container">
-        <div id="login-needed-banner" style="display: none;">
-            <h2>📊 나만의 자산 관리를 시작하세요</h2>
-            <p>로그인하시면 실시간 데이터 저장 및 동기화가 가능합니다.</p>
-            <button onclick="handleGoogleLogin()" style="margin-top:20px; background: var(--primary-color); color: black;">지금 로그인하기</button>
-        </div>
-
-        <div id="app-content">
-            <div id="dashboard" class="page active">
-                <h2>대시보드</h2>
-                ...
-            </div>
-        </div>
+    <div id="desktop-logo">
+        <img src="img/logo.png" alt="Service Logo">
     </div>
-    -->
 
-    <div class="container">
-        <div id="login-needed-banner" style="display: none;">
-            <div class="banner-box"> 
-                <h2>DNN (돈내놔) 앱에 오신것을 환영함</h2>
-                <p>로그인 시 데이터 저장 및 동기화 가능</p>
-                <button onclick="handleGoogleLogin()">지금 로그인하기</button>
-            </div> 
+    <div id="app-shell">
+        <header>
+            <div id="user-display">GUEST MODE</div>
+            <div class="header-btns">
+                <button id="login-btn">로그인(G)</button>
+                <button id="logout-btn" style="display: none;">로그아웃</button>
+            </div>
+        </header>
+
+        <!-- 중복되어 임시 주석처리
+        <div class="container">
+            <div id="login-needed-banner" style="display: none;">
+                <h2>📊 나만의 자산 관리를 시작하세요</h2>
+                <p>로그인하시면 실시간 데이터 저장 및 동기화가 가능합니다.</p>
+                <button onclick="handleGoogleLogin()" style="margin-top:20px; background: var(--primary-color); color: black;">지금 로그인하기</button>
+            </div>
+
+            <div id="app-content">
+                <div id="dashboard" class="page active">
+                    <h2>대시보드</h2>
+                    ...
+                </div>
+            </div>
         </div>
+        -->
+
+        <div class="container">
+            <div id="login-needed-banner" style="display: none;">
+                <div class="banner-box"> 
+                    <h2>DNN (돈내놔) 앱에 오신것을 환영함</h2>
+                    <p>로그인 시 데이터 저장 및 동기화 가능</p>
+                    <button onclick="handleGoogleLogin()">지금 로그인하기</button>
+                </div> 
+            </div>
 
 
-        <div id="app-content">
-            <div id="dashboard" class="page active">
-                <h2>대시보드</h2>
-                <div class="dashboard-grid top-dash">
-                    <div class="stat-card"><div>현재 총 순자산</div><div id="total-assets" class="total-amount">0원</div></div>
-                    <div class="stat-card"><div>이번 달 총 저축</div><div id="cur-save" class="total-amount" style="color:var(--accent-color) !important;">0원</div></div>
-                </div>
-                <div class="chart-card">
-                    <h3 class="chart-title">자산 포트폴리오 비중</h3>
-                    <div class="donut-container">
-                        <div id="asset-donut-chart" class="donut-chart">
-                            <div class="donut-inner"><span class="donut-label">TOTAL</span><span class="donut-value">100%</span></div>
-                        </div>
+            <div id="app-content">
+                <div id="dashboard" class="page active">
+                    <h2>대시보드</h2>
+                    <div class="dashboard-grid top-dash">
+                        <div class="stat-card"><div>현재 총 순자산</div><div id="total-assets" class="total-amount">0원</div></div>
+                        <div class="stat-card"><div>이번 달 총 저축</div><div id="cur-save" class="total-amount" style="color:var(--accent-color) !important;">0원</div></div>
                     </div>
-                    <div id="donut-legend" class="donut-legend-list"></div>
-                </div>
-            </div>
-
-            <div id="bank" class="page">
-                <h2>은행 계좌 관리</h2>
-                <div class="form-card input-group">
-                    <input type="month" id="bank-month"><input type="text" id="bank-name" placeholder="은행명">
-                    <input type="number" id="bank-amount" placeholder="금액(KRW)"><input type="text" id="bank-note" placeholder="비고">
-                    <button onclick="handleAddData('bank')" id="bank-btn">기록 추가</button>
-                </div>
-                <table id="bank-table"><tbody></tbody></table>
-            </div>
-
-            <div id="stock" class="page">
-                <h2>보유 주식 관리</h2>
-                <div class="form-card input-group">
-                    <input type="month" id="stock-month"><input type="text" id="stock-name" placeholder="종목명">
-                    <input type="number" id="stock-count" placeholder="수량"><input type="number" id="stock-avg" placeholder="평단가">
-                    <input type="number" id="stock-current" placeholder="현재가">
-                    <button onclick="handleAddData('stock')" id="stock-btn">업데이트</button>
-                </div>
-                <table id="stock-summary-table" class="summary-table"><tbody></tbody></table>
-                <table id="stock-table"><tbody></tbody></table>
-            </div>
-
-            <div id="card" class="page">
-                <h2>지출 관리</h2>
-                <div class="toggle-group">
-                    <button id="mode-individual-btn" onclick="toggleCardMode('individual')" class="active-toggle">건별 입력</button>
-                    <button id="mode-final-btn" onclick="toggleCardMode('final')">명세서 입력</button>
-                </div>
-                <div id="card-individual-entry" class="form-card input-group">
-                    <input type="date" id="card-date"><input type="text" id="card-name" placeholder="카드사">
-                    <input type="number" id="card-amount" placeholder="금액"><select id="card-cat"><option>식비</option><option>교통</option><option>쇼핑</option><option>기타</option></select>
-                    <button onclick="handleAddData('card')" id="card-btn">추가하기</button>
-                </div>
-                <div id="card-final-entry" class="form-card input-group" style="display:none;">
-                    <input type="month" id="card-final-month"><input type="text" id="card-final-name" placeholder="카드사 명">
-                    <input type="number" id="card-final-amount" placeholder="명세서 총액">
-                    <button onclick="addFinalCardAmount()" id="card-final-btn">입력</button>
-                </div>
-                <table id="card-summary-table" class="summary-table"><tbody></tbody></table>
-                <table id="card-table"><tbody></tbody></table>
-            </div>
-
-            <div id="rent" class="page">
-                <h2>거주 관리</h2>
-                <div class="form-card input-group">
-                    <input type="month" id="rent-month"><input type="text" id="rent-type" placeholder="유형"><input type="number" id="rent-deposit" placeholder="보증금"><input type="number" id="rent-monthly" placeholder="월세">
-                    <button onclick="handleAddData('rent')" id="rent-btn">기록하기</button>
-                </div>
-                <table id="rent-table"><tbody></tbody></table>
-            </div>
-
-            <div id="settings" class="page">
-                <h2>설정</h2>
-                
-                <div class="form-card">
-                    <h3>내 프로필 정보</h3>
-                    <p style="margin-bottom: 10px;">ID: <span id="settings-id" style="font-weight: bold; color: var(--primary-color);"></span></p>
-                    <p>Email: <span id="settings-email" style="color: var(--text-muted);"></span></p>
+                    <div class="chart-card">
+                        <h3 class="chart-title">자산 포트폴리오 비중</h3>
+                        <div class="donut-container">
+                            <div id="asset-donut-chart" class="donut-chart">
+                                <div class="donut-inner"><span class="donut-label">TOTAL</span><span class="donut-value">100%</span></div>
+                            </div>
+                        </div>
+                        <div id="donut-legend" class="donut-legend-list"></div>
+                    </div>
                 </div>
 
-                <div class="form-card">
-                    <h3>월별 데이터 삭제</h3>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">삭제할 월과 항목을 선택해 주세요. (주의: 삭제된 데이터는 복구할 수 없습니다.)</p>
+                <div id="bank" class="page">
+                    <h2>은행 계좌 관리</h2>
+                    <div class="form-card input-group">
+                        <input type="month" id="bank-month"><input type="text" id="bank-name" placeholder="은행명">
+                        <input type="number" id="bank-amount" placeholder="금액(KRW)"><input type="text" id="bank-note" placeholder="비고">
+                        <button onclick="handleAddData('bank')" id="bank-btn">기록 추가</button>
+                    </div>
+                    <table id="bank-table"><tbody></tbody></table>
+                </div>
+
+                <div id="stock" class="page">
+                    <h2>보유 주식 관리</h2>
+                    <div class="form-card input-group">
+                        <input type="month" id="stock-month"><input type="text" id="stock-name" placeholder="종목명">
+                        <input type="number" id="stock-count" placeholder="수량"><input type="number" id="stock-avg" placeholder="평단가">
+                        <input type="number" id="stock-current" placeholder="현재가">
+                        <button onclick="handleAddData('stock')" id="stock-btn">업데이트</button>
+                    </div>
+                    <table id="stock-summary-table" class="summary-table"><tbody></tbody></table>
+                    <table id="stock-table"><tbody></tbody></table>
+                </div>
+
+                <div id="card" class="page">
+                    <h2>지출 관리</h2>
+                    <div class="toggle-group">
+                        <button id="mode-individual-btn" onclick="toggleCardMode('individual')" class="active-toggle">건별 입력</button>
+                        <button id="mode-final-btn" onclick="toggleCardMode('final')">명세서 입력</button>
+                    </div>
+                    <div id="card-individual-entry" class="form-card input-group">
+                        <input type="date" id="card-date"><input type="text" id="card-name" placeholder="카드사">
+                        <input type="number" id="card-amount" placeholder="금액"><select id="card-cat"><option>식비</option><option>교통</option><option>쇼핑</option><option>기타</option></select>
+                        <button onclick="handleAddData('card')" id="card-btn">추가하기</button>
+                    </div>
+                    <div id="card-final-entry" class="form-card input-group" style="display:none;">
+                        <input type="month" id="card-final-month"><input type="text" id="card-final-name" placeholder="카드사 명">
+                        <input type="number" id="card-final-amount" placeholder="명세서 총액">
+                        <button onclick="addFinalCardAmount()" id="card-final-btn">입력</button>
+                    </div>
+                    <table id="card-summary-table" class="summary-table"><tbody></tbody></table>
+                    <table id="card-table"><tbody></tbody></table>
+                </div>
+
+                <div id="rent" class="page">
+                    <h2>거주 관리</h2>
+                    <div class="form-card input-group">
+                        <input type="month" id="rent-month"><input type="text" id="rent-type" placeholder="유형"><input type="number" id="rent-deposit" placeholder="보증금"><input type="number" id="rent-monthly" placeholder="월세">
+                        <button onclick="handleAddData('rent')" id="rent-btn">기록하기</button>
+                    </div>
+                    <table id="rent-table"><tbody></tbody></table>
+                </div>
+
+                <div id="settings" class="page">
+                    <h2>설정</h2>
                     
-                    <div class="input-group">
-                        <input type="month" id="delete-month">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
-                            <label><input type="checkbox" class="delete-cat" value="bank"> 은행 계좌</label>
-                            <label><input type="checkbox" class="delete-cat" value="stock"> 주식 자산</label>
-                            <label><input type="checkbox" class="delete-cat" value="card"> 지출 내역</label>
-                            <label><input type="checkbox" class="delete-cat" value="rent"> 거주/월세</label>
+                    <div class="form-card">
+                        <h3>내 프로필 정보</h3>
+                        <p style="margin-bottom: 10px;">ID: <span id="settings-id" style="font-weight: bold; color: var(--primary-color);"></span></p>
+                        <p>Email: <span id="settings-email" style="color: var(--text-muted);"></span></p>
+                    </div>
+
+                    <div class="form-card">
+                        <h3>월별 데이터 삭제</h3>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">삭제할 월과 항목을 선택해 주세요. (주의: 삭제된 데이터는 복구할 수 없습니다.)</p>
+                        
+                        <div class="input-group">
+                            <input type="month" id="delete-month">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+                                <label><input type="checkbox" class="delete-cat" value="bank"> 은행 계좌</label>
+                                <label><input type="checkbox" class="delete-cat" value="stock"> 주식 자산</label>
+                                <label><input type="checkbox" class="delete-cat" value="card"> 지출 내역</label>
+                                <label><input type="checkbox" class="delete-cat" value="rent"> 거주/월세</label>
+                            </div>
+                            <button onclick="handleMonthlyDelete()" style="background: #DC2626 !important; color: white;">선택 항목 삭제하기</button>
                         </div>
-                        <button onclick="handleMonthlyDelete()" style="background: #DC2626 !important; color: white;">선택 항목 삭제하기</button>
                     </div>
                 </div>
+
             </div>
-
         </div>
+
+        <nav id="main-nav" style="display: none;">
+            <span onclick="showPage('dashboard')">DASHBOARD</span>
+            <span onclick="showPage('bank')">ACCOUNTS</span>
+            <span onclick="showPage('stock')">STOCKS</span>
+            <span onclick="showPage('card')">SPENDING</span>
+            <span onclick="showPage('rent')">HOUSING</span>
+            <span onclick="showPage('settings')">SETTINGS</span>
+        </nav>
+
+        <script type="module" src="script.js"></script>
+
     </div>
-
-    <nav id="main-nav" style="display: none;">
-        <span onclick="showPage('dashboard')">DASHBOARD</span>
-        <span onclick="showPage('bank')">ACCOUNTS</span>
-        <span onclick="showPage('stock')">STOCKS</span>
-        <span onclick="showPage('card')">SPENDING</span>
-        <span onclick="showPage('rent')">HOUSING</span>
-        <span onclick="showPage('settings')">SETTINGS</span>
-    </nav>
-
-    <script type="module" src="script.js"></script>
-
-</div>
 </body>
 </html>
