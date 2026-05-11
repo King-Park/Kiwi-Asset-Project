@@ -153,7 +153,7 @@ window.editData = function(type, id) {
     }
 };
 
-function renderTables() {
+/*function renderTables() {
     ['bank', 'card', 'rent', 'stock'].forEach(type => {
         const tbody = document.querySelector(`#${type}-table tbody`);
         if(!tbody) return; tbody.innerHTML = '';
@@ -165,6 +165,39 @@ function renderTables() {
         });
     });
     renderStockSummary(); renderCardSummary();
+}
+*/
+
+// --- 데이터 테이블 렌더링 (오류 방지 적용) ---
+function renderTables() {
+    ['bank', 'card', 'rent', 'stock'].forEach(type => {
+        const tbody = document.querySelector(`#${type}-table tbody`);
+        if(!tbody) return; 
+        
+        tbody.innerHTML = '';
+        
+        // 데이터 배열이 없거나 비어있으면 건너뜀
+        if (!currentDbData[type]) return;
+
+        currentDbData[type].sort((a,b) => (b.month || "").localeCompare(a.month || "")).forEach((item) => {
+            let row = '';
+            
+            if (type === 'card') {
+                // 카드 데이터 렌더링 (amount가 없을 경우 0으로 처리)
+                const amount = item.amount || 0;
+                row = `<tr><td>🧾</td><td><b>${item.name}</b><br><small>${item.date || item.month} • ${item.cat}</small></td><td style="text-align:right"><b>${amount.toLocaleString()}원</b><br><button class="btn-edit" onclick="editData('card', '${item.id}')">수정</button> <button class="btn-delete" onclick="deleteData('card', '${item.id}')">삭제</button></td></tr>`;
+            } else {
+                // 은행(amount), 거주(deposit), 주식(currentVal) 필드를 모두 커버하며, 없을 경우 0으로 안전하게 처리
+                const displayAmount = item.amount || item.deposit || item.currentVal || item.investment || 0;
+                row = `<tr><td>🧾</td><td><b>${item.name || item.type || '알 수 없음'}</b><br><small>${item.month || '날짜 없음'}</small></td><td style="text-align:right"><b>${displayAmount.toLocaleString()}원</b><br><button class="btn-edit" onclick="editData('${type}', '${item.id}')">수정</button> <button class="btn-delete" onclick="deleteData('${type}', '${item.id}')">삭제</button></td></tr>`;
+            }
+            tbody.innerHTML += row;
+        });
+    });
+    
+    // 요약 테이블 함수 호출 (정의되어 있을 경우)
+    if (typeof renderStockSummary === 'function') renderStockSummary(); 
+    if (typeof renderCardSummary === 'function') renderCardSummary();
 }
 
 // 대시보드 도넛 차트 및 요약 로직
