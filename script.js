@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; 
+import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, getDocs, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- 1. 본인의 Firebase Config 정보를 여기에 붙여넣으세요 ---
 const firebaseConfig = {
@@ -20,6 +20,7 @@ const provider = new GoogleAuthProvider();
 let currentUser = null;
 let currentDbData = { bank: [], stock: [], card: [], rent: [] };
 let editInfo = { type: null, id: null };
+let activeListeners = []; //메모리 누수 방지를 위한 구독 해제 함수 보관 배열
 
 // --- 샘플 데이터 정의 ---
 const sampleData = {
@@ -28,6 +29,12 @@ const sampleData = {
     card: [{ name: "현대카드", amount: 150000, date: "2024-05-01", cat: "식비", month: "2024-05" }],
     rent: [{ type: "전세", deposit: 100000000, monthly: 0, month: "2024-05" }]
 };
+
+// 구독 해제 실행 함수 추가
+function clearAllListeners() {
+    activeListeners.forEach(unsub => unsub()); // 보관된 모든 구독 해제 함수 실행
+    activeListeners = []; // 배열 초기화
+}
 
 // --- 2. 로그인/로그아웃 처리 ---
 // 로그인 버튼 함수를 전역으로 노출
@@ -55,6 +62,9 @@ onAuthStateChanged(auth, (user) => {
     } else {
         // 2. 로그아웃 또는 비로그인 시
         currentUser = null;
+
+        clearAllListeners(); //로그아웃 시 백그라운드 데이터 수신을 완벽히 차단 (메모리 누수 방지)
+
         userDisplay.innerText = "GUEST MODE";
         loginBtn.style.display = 'block';
         logoutBtn.style.display = 'none';
@@ -70,13 +80,27 @@ onAuthStateChanged(auth, (user) => {
 
 // --- 3. 실시간 데이터 동기화 (onSnapshot) ---
 function syncData() {
+    // 중복 실행 방지를 위해 기존 리스너가 있다면 먼저 모두 초기화
+    clearAllListeners(); 
+
     ['bank', 'stock', 'card', 'rent'].forEach(type => {
-        const q = query(collection(db, type), where("uid", "==", currentUser.uid));
-        onSnapshot(q, (snapshot) => {
+        // 쿼리 최적화: 내 데이터 중 최신 100개만 가져오도록 제한 (과금 폭탄 방지)
+        const q = query(
+            collection(db, type), 
+            where("uid", "==", currentUser.uid),
+            orderBy("createdAt", "desc"), 
+            limit(100) 
+        );
+        
+        // onSnapshot이 반환하는 구독 해제(unsubscribe) 함수를 변수에 담음
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             currentDbData[type] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderTables();
             updateDashboard();
         });
+
+        // 반환된 구독 해제 함수를 배열에 저장 (추후 clearAllListeners에서 사용)
+        activeListeners.push(unsubscribe);
     });
 }
 
@@ -123,13 +147,111 @@ window.addFinalCardAmount = async function() {
     const month = document.getElementById('card-final-month').value;
     const name = document.getElementById('card-final-name').value;
     const finalAmount = Number(document.getElementById('card-final-amount').value);
+    
+    // 기존에 개별 등록된 지출의 합계 계산
+    const currentSum = currentDbData.card.filter(i => i.month === month && i.name === name && i.cat !== 'not set').reduce((s, i) => s + i.amount, 0);
+    
+    if (finalAmount <= currentSum) {
+        return alert("이미 등록된 개별 지출의 합계가 명세서 총액보다 큽니다.");
+    }
+
+    // ✅ 수정 모드일 때의 로직 추가
+    if (editInfo.type === 'card' && editInfo.id) {
+        await updateDoc(doc(db, "card", editInfo.id), {
+            month,
+            name,
+            amount: finalAmount - currentSum,
+            date: `${month}-28`
+            // 수정 시에는 기존 createdAt을 유지합니다.
+        });
+        
+        editInfo = { type: null, id: null }; // 수정 정보 초기화
+        document.getElementById('card-final-btn').innerText = "명세서 추가"; // 버튼 이름 원복
+        alert("명세서 내역이 수정되었습니다.");
+        
+    } else {
+        // ✅ 신규 추가 로직 (createdAt 필드 추가)
+        await addDoc(collection(db, "card"), { 
+            uid: currentUser.uid, 
+            month, 
+            name, 
+            amount: finalAmount - currentSum, 
+            cat: 'not set', 
+            date: `${month}-28`,
+            createdAt: new Date() // ⭐️ 핵심 해결책: 생성일자 데이터 포함
+        });
+        alert("명세서 차액이 성공적으로 등록되었습니다.");
+    }
+
+    // ✅ UI 피드백: 처리 완료 후 금액 입력칸 비우기
+    document.getElementById('card-final-amount').value = '';
+};
+
+/* 기존 명세서 함수
+window.addFinalCardAmount = async function() {
+    const month = document.getElementById('card-final-month').value;
+    const name = document.getElementById('card-final-name').value;
+    const finalAmount = Number(document.getElementById('card-final-amount').value);
     const currentSum = currentDbData.card.filter(i => i.month === month && i.name === name && i.cat !== 'not set').reduce((s, i) => s + i.amount, 0);
     if (finalAmount <= currentSum) return alert("이미 합계가 더 큽니다.");
     await addDoc(collection(db, "card"), { uid: currentUser.uid, month, name, amount: finalAmount - currentSum, cat: 'not set', date: `${month}-28` });
-};
+}; */
 
 window.deleteData = async function(type, id) { if(confirm("정말 삭제하시겠습니까?")) await deleteDoc(doc(db, type, id)); };
 
+// --- 데이터 수정 (폼에 기존 데이터 불러오기) ---
+window.editData = function(type, id) {
+    const item = currentDbData[type].find(el => el.id === id);
+    editInfo = { type, id };
+    
+    if (type === 'card') {
+        toggleCardMode(item.cat === 'not set' ? 'final' : 'individual');
+        if (item.cat === 'not set') {
+            document.getElementById('card-final-month').value = item.month;
+            document.getElementById('card-final-name').value = item.name;
+            const curSum = currentDbData.card.filter(i => i.month === item.month && i.name === item.name && i.id !== id).reduce((s, i) => s + i.amount, 0);
+            document.getElementById('card-final-amount').value = curSum + item.amount;
+            document.getElementById('card-final-btn').innerText = "수정 완료";
+        } else {
+            document.getElementById('card-date').value = item.date; 
+            document.getElementById('card-name').value = item.name;
+            document.getElementById('card-amount').value = item.amount; 
+            document.getElementById('card-cat').value = item.cat;
+            document.getElementById('card-btn').innerText = "수정 완료";
+        }
+    } else {
+        // 공통: 월(Month) 데이터 채우기
+        document.getElementById(`${type}-month`).value = item.month;
+        
+        // ✅ 누락되었던 주식 및 거주지 데이터 불러오기 추가
+        if (type === 'bank') { 
+            document.getElementById('bank-name').value = item.name; 
+            document.getElementById('bank-amount').value = item.amount; 
+            document.getElementById('bank-note').value = item.note || ''; 
+        } 
+        else if (type === 'stock') {
+            document.getElementById('stock-name').value = item.name;
+            document.getElementById('stock-count').value = item.count;
+            
+            // DB에 저장된 총 투자금과 현재가치로 평단가와 현재가를 역산하여 폼에 입력
+            const avgPrice = item.count > 0 ? (item.investment / item.count) : 0;
+            const currentPrice = item.currentPrice || (item.count > 0 ? (item.currentVal / item.count) : 0);
+            
+            document.getElementById('stock-avg').value = avgPrice;
+            document.getElementById('stock-current').value = currentPrice;
+        } 
+        else if (type === 'rent') {
+            document.getElementById('rent-type').value = item.type;
+            document.getElementById('rent-deposit').value = item.deposit;
+            document.getElementById('rent-monthly').value = item.monthly;
+        }
+        
+        // 저장 버튼을 '수정 완료'로 변경
+        document.getElementById(`${type}-btn`).innerText = "수정 완료";
+    }
+};
+
+/* 기존 데이터 수정 로직
 window.editData = function(type, id) {
     const item = currentDbData[type].find(el => el.id === id);
     editInfo = { type, id };
@@ -152,6 +274,8 @@ window.editData = function(type, id) {
         document.getElementById(`${type}-btn`).innerText = "수정 완료";
     }
 };
+
+*/
 
 /*function renderTables() {
     ['bank', 'card', 'rent', 'stock'].forEach(type => {
@@ -185,11 +309,11 @@ function renderTables() {
             if (type === 'card') {
                 // 카드 데이터 렌더링 (amount가 없을 경우 0으로 처리)
                 const amount = item.amount || 0;
-                row = `<tr><td>🧾</td><td><b>${item.name}</b><br><small>${item.date || item.month} • ${item.cat}</small></td><td style="text-align:right"><b>${amount.toLocaleString()}원</b><br><button class="btn-edit" onclick="editData('card', '${item.id}')">수정</button> <button class="btn-delete" onclick="deleteData('card', '${item.id}')">삭제</button></td></tr>`;
+                row = `<tr><td><b>${item.name}</b><br><small>${item.date || item.month} • ${item.cat}</small></td><td style="text-align:right"><b>${amount.toLocaleString()}원</b><br><button class="btn-edit" onclick="editData('card', '${item.id}')">수정</button> <button class="btn-delete" onclick="deleteData('card', '${item.id}')">삭제</button></td></tr>`;
             } else {
                 // 은행(amount), 거주(deposit), 주식(currentVal) 필드를 모두 커버하며, 없을 경우 0으로 안전하게 처리
                 const displayAmount = item.amount || item.deposit || item.currentVal || item.investment || 0;
-                row = `<tr><td>🧾</td><td><b>${item.name || item.type || '알 수 없음'}</b><br><small>${item.month || '날짜 없음'}</small></td><td style="text-align:right"><b>${displayAmount.toLocaleString()}원</b><br><button class="btn-edit" onclick="editData('${type}', '${item.id}')">수정</button> <button class="btn-delete" onclick="deleteData('${type}', '${item.id}')">삭제</button></td></tr>`;
+                row = `<tr><td><b>${item.name || item.type || '알 수 없음'}</b><br><small>${item.month || '날짜 없음'}</small></td><td style="text-align:right"><b>${displayAmount.toLocaleString()}원</b><br><button class="btn-edit" onclick="editData('${type}', '${item.id}')">수정</button> <button class="btn-delete" onclick="deleteData('${type}', '${item.id}')">삭제</button></td></tr>`;
             }
             tbody.innerHTML += row;
         });

@@ -266,6 +266,56 @@ td:nth-child(3) { grid-area: amount; font-weight: 800; font-size: 16px; text-ali
 td:nth-child(4), td:nth-child(5) { grid-area: date; font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-left: 5px; display: inline-block; }
 td:nth-child(4)::before { content: ' • '; }
 
+/* 1. 도넛 차트 본체 (동그란 모양과 크기 지정) */
+#asset-donut-chart {
+    width: 150px;           /* 차트 가로 너비 */
+    height: 150px;          /* 차트 세로 높이 */
+    border-radius: 50%;     /* 완벽한 원으로 만들기 */
+    position: relative;
+    margin: 20px auto;      /* 가운데 정렬 및 상하 여백 */
+    flex-shrink: 0;
+}
+
+/* 2. 도넛의 가운데 뻥 뚫린 구멍 만들기 */
+#asset-donut-chart::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90px;           /* 내부 구멍 크기 (이 값을 조절하여 도넛 두께 변경 가능) */
+    height: 90px;
+    background-color: #ffffff; /* 카드의 배경색과 동일하게 맞춰서 구멍이 뚫린 것처럼 눈속임 */
+    border-radius: 50%;
+}
+
+/* 3. 범례(Legend) 스타일 다듬기 (이미 있다면 덮어쓰기) */
+#donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.legend-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.legend-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
 /* 요약 테이블 예외 처리 */
 .summary-table tr { display: flex; flex-direction: column; }
 .summary-table td { width: 100%; padding: 5px 0; }
