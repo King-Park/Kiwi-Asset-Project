@@ -320,11 +320,86 @@ function renderTables() {
     });
     
     // 요약 테이블 함수 호출 (정의되어 있을 경우)
+    /* 미사용으로 인해 주석처리 
     if (typeof renderStockSummary === 'function') renderStockSummary(); 
     if (typeof renderCardSummary === 'function') renderCardSummary();
+    */
 }
 
 // 대시보드 도넛 차트 및 요약 로직
+function updateDashboard() {
+    const nowMonth = new Date().toISOString().substring(0, 7);
+
+    // 1. 현재 전체 순자산 계산
+    const bankTotal = currentDbData.bank.reduce((sum, i) => sum + i.amount, 0);
+    const stockCurrTotal = currentDbData.stock.reduce((sum, i) => sum + i.currentVal, 0);
+    const rentTotal = currentDbData.rent.reduce((sum, i) => sum + i.deposit, 0);
+
+    // ✅ 이번 달 카드 지출만 순자산에서 차감
+    const thisMonthCardTotal = currentDbData.card
+        .filter(i => i.month === nowMonth)
+        .reduce((sum, i) => sum + i.amount, 0);
+
+    const totalAssets = bankTotal + stockCurrTotal + rentTotal - thisMonthCardTotal;
+
+    // 2. 지난달 순자산 계산 (저축액 산출용)
+    let d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    const prevMonth = d.toISOString().substring(0, 7);
+
+    const prevBank  = currentDbData.bank.filter(i => i.month === prevMonth).reduce((s, i) => s + i.amount, 0);
+    const prevStock = currentDbData.stock.filter(i => i.month === prevMonth).reduce((s, i) => s + i.currentVal, 0);
+    const prevRent  = currentDbData.rent.filter(i => i.month === prevMonth).reduce((s, i) => s + i.deposit, 0);
+    // ✅ 지난달 순자산 계산 시에도 동일하게 해당 월 카드 지출만 차감
+    const prevCard  = currentDbData.card.filter(i => i.month === prevMonth).reduce((s, i) => s + i.amount, 0);
+    const prevTotalAssets = prevBank + prevStock + prevRent - prevCard;
+
+    // 3. 이번 달 총 저축
+    const monthlySaving = prevTotalAssets > 0 ? (totalAssets - prevTotalAssets) : 0;
+
+    // 4. 이번 달 총 지출액 (대시보드 카드 표시용 - 기존과 동일)
+    const monthlySpending = currentDbData.card
+        .filter(i => i.month === nowMonth)
+        .reduce((s, i) => s + i.amount, 0);
+        
+    // --- UI 업데이트 ---
+    
+    // 총 순자산
+    document.getElementById('total-assets').innerText = totalAssets.toLocaleString() + "원";
+    
+    // 총 저축 (상/하 화살표 표시)
+    const saveEl = document.getElementById('cur-save');
+    const sign = monthlySaving > 0 ? "▲" : (monthlySaving < 0 ? "▼" : "");
+    const saveColor = monthlySaving > 0 ? "#C3F400" : (monthlySaving < 0 ? "#ff4d4d" : "#ffffff");
+    saveEl.innerHTML = `${monthlySaving.toLocaleString()}원 <span style="font-size:10px; color:${saveColor}">${sign}</span>`;
+
+    // 총 지출액
+    document.getElementById('cur-spending').innerText = monthlySpending.toLocaleString() + "원";
+
+    // 도넛 차트 로직 (기존 유지)
+    const pieChart = document.getElementById('asset-donut-chart');
+    const legend = document.getElementById('donut-legend');
+    const total = bankTotal + stockCurrTotal + rentTotal;
+    if(total > 0) {
+        const segs = [
+            { label: '국내/외 주식', val: stockCurrTotal, color: '#1A3636' },
+            { label: '안전 예치금', val: bankTotal, color: '#C3F400' },
+            { label: '기타 자산', val: rentTotal, color: '#5E7171' }
+        ];
+        let cum = 0; let grad = [];
+        legend.innerHTML = '';
+        segs.forEach(s => {
+            const p = (s.val / total * 100);
+            if(p > 0) {
+                grad.push(`${s.color} ${cum}% ${cum + p}%`); cum += p;
+                legend.innerHTML += `<div class="legend-item"><div class="legend-left"><div class="legend-dot" style="background:${s.color}"></div>${s.label}</div><div class="legend-right">${p.toFixed(0)}%</div></div>`;
+            }
+        });
+        pieChart.style.background = `conic-gradient(${grad.join(', ')})`;
+    }
+}
+
+/* 3분할 이전 대시보드 로직
 function updateDashboard() {
     const bankTotal = currentDbData.bank.reduce((sum, i) => sum + i.amount, 0);
     const stockCurrTotal = currentDbData.stock.reduce((sum, i) => sum + i.currentVal, 0);
@@ -356,6 +431,7 @@ function updateDashboard() {
         pieChart.style.background = `conic-gradient(${grad.join(', ')})`;
     }
 }
+*/
 
 // 공통 유틸
 // 기존 window.showPage = (id) => { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); };
@@ -383,9 +459,16 @@ window.toggleCardMode = (mode) => {
     document.getElementById('mode-final-btn').className = mode === 'final' ? 'active-toggle' : '';
 };
 function initInputs() {
-    document.querySelectorAll('input[type="month"]').forEach(i => i.value = new Date().toISOString().substring(0,7));
-    document.querySelectorAll('input[type="date"]').forEach(i => i.value = new Date().toISOString().substring(0,10));
+    const now = new Date();
+    // 로컬 시간 기준으로 YYYY-MM 형식 생성
+    const localMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    // 로컬 시간 기준으로 YYYY-MM-DD 형식 생성
+    const localDate = `${localMonth}-${String(now.getDate()).padStart(2, '0')}`;
+
+    document.querySelectorAll('input[type="month"]').forEach(i => i.value = localMonth);
+    document.querySelectorAll('input[type="date"]').forEach(i => i.value = localDate);
 }
+
 function clearFields(type) { document.querySelectorAll(`#${type} input:not([type="month"]):not([type="date"])`).forEach(i => i.value = ''); }
 function renderStockSummary() {} function renderCardSummary() {} // 요약 로직 필요시 추가
 
@@ -415,3 +498,6 @@ window.handleMonthlyDelete = async function() {
         alert("데이터 삭제 중 오류가 발생했습니다.");
     }
 };
+
+// ✅ 추가: 페이지 로드 시 날짜 입력 필드 기본값 세팅
+initInputs();
