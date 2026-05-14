@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, getDocs, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, getDocs, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 
 // --- 1. 본인의 Firebase Config 정보를 여기에 붙여넣으세요 ---
 const firebaseConfig = {
@@ -38,7 +38,23 @@ function clearAllListeners() {
 
 // --- 2. 로그인/로그아웃 처리 ---
 // 로그인 버튼 함수를 전역으로 노출
-window.handleGoogleLogin = () => signInWithPopup(auth, provider);
+// ✅ 모바일 Safari는 팝업 차단 → redirect로 분기
+window.handleGoogleLogin = () => {
+        const isMobileSafari = /iP(ad|hone|od)/.test(navigator.userAgent)
+                        && /WebKit/.test(navigator.userAgent)
+                        && !/CriOS/.test(navigator.userAgent);
+
+        if (isMobileSafari) {
+            signInWithRedirect(auth, provider);
+        } else {
+            signInWithPopup(auth, provider);
+        }
+    };
+
+    // ✅ redirect 후 돌아왔을 때 결과 처리
+    getRedirectResult(auth).catch(error => {
+        console.error("Redirect 로그인 실패:", error);
+});
 document.getElementById('logout-btn').onclick = () => { if(confirm("로그아웃 하시겠습니까?")) signOut(auth); };
 
 onAuthStateChanged(auth, (user) => {
@@ -604,7 +620,7 @@ window.handleMonthlyDelete = async function() {
 initInputs();
 
 // 방금 복사한 구글 웹 앱 URL을 아래에 붙여넣으세요.
-const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbweD0jjxWeKqgiVi4OTHE3BTxynKhSUZrb8trWq3WGrM365Ym_aTTz-whGBqbcz_pSTxw/exec";
+const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbz5xzyzXFUfro-Bcqzz6hNgtN_8vhFvabQKCit1kZIqyhQ56mTJuTe_JCuFGJiwtfNnRQ/exec";
 
 
 // --- 실시간 환율 가져오기 (무료 API, 캐싱 적용) ---
@@ -626,7 +642,8 @@ async function getUsdKrwRate() {
 // ✅ 기존 fetchStockPrice 함수 교체
 async function fetchStockPrice(ticker) {
     try {
-        const response = await fetch(`${MY_FREE_API_URL}?ticker=${encodeURIComponent(ticker)}`);
+        const origin = encodeURIComponent(window.location.hostname);
+        const response = await fetch(`${MY_FREE_API_URL}?ticker=${encodeURIComponent(ticker)}&origin=${origin}`);
         const data = await response.json();
         
         if (data && data.price !== undefined) {
