@@ -699,25 +699,46 @@ initInputs();
 const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbzcClomr3WcVw7p14zZlj9CAWplkV2MP1jsViz5a5r1nfgPhbKry7ZC24KlHhNTi85zgQ/exec";
 
 
-// ✅ 2. 529~546번째 줄 fetchStockPrice 함수 전체를 아래로 교체
+// --- 실시간 환율 가져오기 (무료 API, 캐싱 적용) ---
+let cachedUsdKrw = null; // 환율을 한 번만 불러와서 저장해두는 변수 (API 과부하 방지)
+
+async function getUsdKrwRate() {
+    if (cachedUsdKrw) return cachedUsdKrw; // 이미 불러온 환율이 있으면 그대로 사용
+    try {
+        const res = await fetch("https://open.er-api.com/v6/latest/USD");
+        const data = await res.json();
+        cachedUsdKrw = data.rates.KRW;
+        return cachedUsdKrw;
+    } catch (error) {
+        console.error("환율 정보를 가져오지 못했습니다.", error);
+        return 1350; // API 통신 실패 시 비상용 임시 환율
+    }
+}
+
+// ✅ 기존 fetchStockPrice 함수 교체
 async function fetchStockPrice(ticker) {
     try {
-        // 표준 fetch API를 사용하여 구글 스크립트에 요청
         const response = await fetch(`${MY_FREE_API_URL}?ticker=${encodeURIComponent(ticker)}`);
-        
-        // 응답을 JSON 형태로 파싱
         const data = await response.json();
         
-        // 정상적으로 가격 데이터가 돌아왔는지 확인
         if (data && data.price !== undefined) {
-            return data.price;
+            let finalPrice = data.price; // 야후 파이낸스가 준 원본 가격 (원화 또는 달러)
+
+            // 💡 핵심 로직: 종목코드(티커)가 한국 주식(.KS, .KQ)이 아니면 달러(USD)로 간주하고 환율 적용
+            const upperTicker = ticker.toUpperCase();
+            if (!upperTicker.endsWith('.KS') && !upperTicker.endsWith('.KQ')) {
+                const exchangeRate = await getUsdKrwRate();
+                finalPrice = finalPrice * exchangeRate; // 달러 가격에 현재 환율을 곱하여 원화로 변환
+            }
+
+            return finalPrice;
         } else {
             console.error("가격 정보가 없습니다:", data.error);
             return 0;
         }
     } catch (error) {
         console.error(`${ticker} 통신 실패:`, error);
-        return 0; // 에러 발생 시 0원으로 처리하여 앱이 멈추는 것을 방지
+        return 0; 
     }
 }
 // --- 수동 & 자동 현재가 일괄 업데이트 로직 ---
