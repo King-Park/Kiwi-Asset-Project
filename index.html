@@ -67,13 +67,23 @@
                         </div>
                     </div>
                     <div class="chart-card">
-                        <h3 class="chart-title">자산 포트폴리오 비중</h3>
+                        <h3 class="chart-title">개인 자산 포트폴리오</h3>
                         <div class="donut-container">
                             <div id="asset-donut-chart" class="donut-chart">
-                                <div class="donut-inner"><span class="donut-label">TOTAL</span><span class="donut-value">100%</span></div>
+                                <div class="donut-inner"><span class="donut-label">PERSONAL</span><span class="donut-value">100%</span></div>
                             </div>
                         </div>
                         <div id="donut-legend" class="donut-legend-list"></div>
+                    </div>
+
+                    <div id="public-chart-card" class="chart-card" style="display: none;">
+                        <h3 class="chart-title" style="color: #3B82F6;">공용 자산 포트폴리오</h3>
+                        <div class="donut-container" style="background: #EBF3FF; border-color: #D1E3FF;">
+                            <div id="public-donut-chart" class="donut-chart">
+                                <div class="donut-inner"><span class="donut-label">PUBLIC</span><span class="donut-value">100%</span></div>
+                            </div>
+                        </div>
+                        <div id="public-donut-legend" class="donut-legend-list"></div>
                     </div>
                 </div>
 
@@ -82,6 +92,9 @@
                     <div class="form-card input-group">
                         <input type="month" id="bank-month"><input type="text" id="bank-name" placeholder="은행명">
                         <input type="number" id="bank-amount" placeholder="금액(KRW)"><input type="text" id="bank-note" placeholder="비고">
+                        <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="bank-isPublic" style="width: auto; margin: 0;"> 공금 (순자산 제외)
+                        </label>
                         <button onclick="handleAddData('bank')" id="bank-btn">기록 추가</button>
                     </div>
                     <table id="bank-table"><tbody></tbody></table>
@@ -100,6 +113,9 @@
                         <input type="text" id="stock-ticker" placeholder="종목코드 (예: 005930.KS)">
                         <input type="number" id="stock-count" placeholder="수량">
                         <input type="number" id="stock-avg" placeholder="평단가">
+                        <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="stock-isPublic" style="width: auto; margin: 0;"> 공금 (순자산 제외)
+                        </label>
                         <button onclick="handleAddData('stock')" id="stock-btn">기록 추가</button>
                     </div>
                     <table id="stock-summary-table" class="summary-table"><tbody></tbody></table>
@@ -115,18 +131,21 @@
                     <div id="card-individual-entry" class="form-card input-group">
                         <input type="date" id="card-date"><input type="text" id="card-name" placeholder="카드사">
                         <input type="number" id="card-amount" placeholder="금액"><select id="card-cat"><option>식비</option><option>교통</option><option>쇼핑</option><option>기타</option></select>
+                        <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="card-isPublic" style="width: auto; margin: 0;"> 공금 지출 (순자산 차감 제외)
+                        </label>
                         <button onclick="handleAddData('card')" id="card-btn">추가하기</button>
                     </div>
                     <div id="card-final-entry" class="form-card input-group" style="display:none;">
                         <input type="month" id="card-final-month">
                         <input type="text" id="card-final-name" placeholder="카드사 명">
                         <input type="number" id="card-final-amount" placeholder="명세서 총액">
-                        
                         <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-color); cursor: pointer;">
-                            <input type="checkbox" id="card-final-isPaid" style="width: auto; margin: 0; cursor: pointer;"> 
-                            대금 결제 완료 (체크 시 순자산에서 이중 차감 안 함)
+                            <input type="checkbox" id="card-final-isPaid" style="width: auto; margin: 0; cursor: pointer;"> 대금 결제 완료 (이중 차감 안 함)
                         </label>
-                        
+                        <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="card-final-isPublic" style="width: auto; margin: 0;"> 공금 지출 (순자산 차감 제외)
+                        </label>
                         <button onclick="addFinalCardAmount()" id="card-final-btn">입력</button>
                     </div>
                     <table id="card-summary-table" class="summary-table"><tbody></tbody></table>
@@ -137,6 +156,9 @@
                     <h2>거주 관리</h2>
                     <div class="form-card input-group">
                         <input type="month" id="rent-month"><input type="text" id="rent-type" placeholder="유형"><input type="number" id="rent-deposit" placeholder="보증금"><input type="number" id="rent-monthly" placeholder="월세">
+                        <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="rent-isPublic" style="width: auto; margin: 0;"> 공금 (순자산 제외)
+                        </label>
                         <button onclick="handleAddData('rent')" id="rent-btn">기록하기</button>
                     </div>
                     <table id="rent-table"><tbody></tbody></table>

@@ -126,48 +126,42 @@ window.handleAddData = async function(type) {
         entry.name = document.getElementById('card-name').value;
         entry.amount = Number(document.getElementById('card-amount').value);
         entry.cat = document.getElementById('card-cat').value;
+        entry.isPublic = document.getElementById('card-isPublic').checked;
     } else {
         entry.month = document.getElementById(`${type}-month`).value;
+        entry.isPublic = document.getElementById(`${type}-isPublic`).checked;
         if (type === 'bank') {
             entry.name = document.getElementById('bank-name').value;
             entry.amount = Number(document.getElementById('bank-amount').value);
             entry.note = document.getElementById('bank-note').value;
+            if (!entry.name || !entry.amount) {
+                alert("은행명과 금액을 입력해 주세요."); return;
+            }
 
         } else if (type === 'stock') {
             const count = Number(document.getElementById('stock-count').value);
-            const avg = Number(document.getElementById('stock-avg').value);  // 변수로 분리
+            const avg = Number(document.getElementById('stock-avg').value);
             const ticker = document.getElementById('stock-ticker').value.trim();
+            
+            if (!document.getElementById('stock-name').value || !count || !avg) {
+                alert("종목명, 수량, 평단가를 모두 입력해 주세요."); return;
+            }
+
             entry.name = document.getElementById('stock-name').value; 
-            entry.ticker = ticker; // 종목코드 저장
+            entry.ticker = ticker; 
             entry.count = count;
-            entry.investment = count * Number(document.getElementById('stock-avg').value);
+            entry.investment = count * avg;
             
             // 추가 시점에 현재가를 1회 긁어와서 저장
             const fetchedPrice = ticker ? await fetchStockPrice(ticker) : 0;
             entry.currentPrice = fetchedPrice;
             entry.currentVal = count * fetchedPrice;
-        } else if (type === 'stock') {
-        if (!entry.name || !entry.count || !avg) {
-                alert("종목명, 수량, 평단가를 모두 입력해 주세요."); return;
-            }
+
         } else if (type === 'rent') {
             entry.type = document.getElementById('rent-type').value;
             entry.deposit = Number(document.getElementById('rent-deposit').value);
             entry.monthly = Number(document.getElementById('rent-monthly').value);
-        }
-        if (type === 'bank') {
-        if (!entry.name || !entry.amount) {
-            alert("은행명과 금액을 입력해 주세요."); return;
-            }
-        } else if (type === 'stock') {
-            if (!entry.name || !entry.count || !entry.investment) {
-                alert("종목명, 수량, 평단가를 모두 입력해 주세요."); return;
-            }
-        } else if (type === 'card') {
-            if (!entry.name || !entry.amount) {
-                alert("카드사와 금액을 입력해 주세요."); return;
-            }
-        } else if (type === 'rent') {
+            
             if (!entry.type || !entry.deposit) {
                 alert("유형과 보증금을 입력해 주세요."); return;
             }
@@ -201,7 +195,8 @@ window.addFinalCardAmount = async function() {
             name,
             amount: finalAmount - currentSum,
             date: `${month}-28`,
-            isPaid // 수정 시 DB에 상태 업데이트
+            isPaid, // 수정 시 DB에 상태 업데이트
+            isPublic
         });
         
         editInfo = { type: null, id: null }; 
@@ -217,7 +212,8 @@ window.addFinalCardAmount = async function() {
             cat: 'not set', 
             date: `${month}-28`,
             createdAt: new Date(),
-            isPaid // 신규 추가 시 DB에 저장
+            isPaid, // 신규 추가 시 DB에 저장
+            isPublic
         });
         alert("명세서 차액이 성공적으로 등록되었습니다.");
     }
@@ -225,6 +221,7 @@ window.addFinalCardAmount = async function() {
     // UI 피드백 초기화
     document.getElementById('card-final-amount').value = '';
     document.getElementById('card-final-isPaid').checked = false; // 체크박스 초기화
+    document.getElementById('card-final-isPublic').checked = false;
 };
 
 /* 기존 명세서 함수
@@ -252,18 +249,21 @@ window.editData = function(type, id) {
             const curSum = currentDbData.card.filter(i => i.month === item.month && i.name === item.name && i.id !== id).reduce((s, i) => s + i.amount, 0);
             document.getElementById('card-final-amount').value = curSum + item.amount;
             document.getElementById('card-final-isPaid').checked = item.isPaid || false;
+            document.getElementById('card-final-isPublic').checked = item.isPublic || false; 
             document.getElementById('card-final-btn').innerText = "수정 완료";
         } else {
             document.getElementById('card-date').value = item.date; 
             document.getElementById('card-name').value = item.name;
             document.getElementById('card-amount').value = item.amount; 
             document.getElementById('card-cat').value = item.cat;
+            document.getElementById('card-isPublic').checked = item.isPublic || false;
             document.getElementById('card-btn').innerText = "수정 완료";
         }
     } else {
         // 공통: 월(Month) 데이터 채우기
         document.getElementById(`${type}-month`).value = item.month;
-        
+        document.getElementById(`${type}-isPublic`).checked = item.isPublic || false;
+
         // 누락되었던 주식 및 거주지 데이터 불러오기 추가
         if (type === 'bank') { 
             document.getElementById('bank-name').value = item.name; 
@@ -307,9 +307,8 @@ function renderTables() {
             let row = '';
             const amount = item.amount ?? item.currentVal ?? item.deposit ?? 0;
             const dateText = item.date || item.month || '-';
-
-            // ✅ 비고란 텍스트 정의 (은행 항목일 경우 날짜 뒤에 불렛 기호와 함께 표시)
             const noteText = (type === 'bank' && item.note) ? ` • ${item.note}` : '';
+            const publicBadge = item.isPublic ? `<span style="color:#3B82F6; font-size:11px; font-weight:800;">[공금]</span> ` : '';
 
             if (type === 'card') {
                 const paidBadge = (item.cat === 'not set' && item.isPaid) ? `[결제완료] ` : '';
@@ -323,10 +322,10 @@ function renderTables() {
                     </td>
                 </tr>`;
             } else {
-                // ✅ 비고(noteText)를 첫 번째 <td>에 넣어 날짜 스타일(12px, 회색)을 그대로 적용
+                // 비고(noteText)를 첫 번째 <td>에 넣어 날짜 스타일(12px, 회색)을 그대로 적용
                 row = `<tr>
                     <td>${dateText}${noteText}</td>
-                    <td><b>${item.name || item.type || '알 수 없음'}</b></td>
+                    <td><b>${publicBadge}${item.name || item.type || '알 수 없음'}</b></td>
                     <td style="text-align:right">
                         <b>${amount.toLocaleString()}원</b><br>
                         <button class="btn-edit" onclick="editData('${type}', '${item.id}')">수정</button>
@@ -401,7 +400,113 @@ function renderTables() {
     if (typeof renderCardSummary === 'function') renderCardSummary();
     */
 
+// [전체 교체] script.js의 updateDashboard 함수
+function updateDashboard() {
+    const now = new Date();
+    const nowMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
+    // --- 1. 데이터 분류 (개인 vs 공금) ---
+    const bankP = currentDbData.bank.filter(i => !i.isPublic);
+    const bankPb = currentDbData.bank.filter(i => i.isPublic);
+    const stockP = currentDbData.stock.filter(i => !i.isPublic);
+    const stockPb = currentDbData.stock.filter(i => i.isPublic);
+    const rentP = currentDbData.rent.filter(i => !i.isPublic);
+    const rentPb = currentDbData.rent.filter(i => i.isPublic);
+
+    // --- 2. 상단 요약 박스 계산 (개인 자산 기준) ---
+    const bankTotalP = bankP.reduce((sum, i) => sum + i.amount, 0);
+    const stockTotalP = stockP.reduce((sum, i) => sum + i.currentVal, 0);
+    const rentTotalP = rentP.reduce((sum, i) => sum + i.deposit, 0);
+    
+    const paidCardSigs = currentDbData.card.filter(i => i.cat === 'not set' && i.isPaid).map(i => `${i.month}_${i.name}`);
+    const cardTotalP = currentDbData.card
+        .filter(i => i.month === nowMonth && !i.isPublic)
+        .filter(i => !paidCardSigs.includes(`${i.month}_${i.name}`))
+        .reduce((sum, i) => sum + i.amount, 0);
+
+    const totalAssetsP = bankTotalP + stockTotalP + rentTotalP - cardTotalP;
+
+    // (저축액 계산용 지난달 데이터 - 생략, 기존 로직 유지)
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+    const prevBankP  = bankP.filter(i => i.month === prevMonth).reduce((s, i) => s + i.amount, 0);
+    const prevStockP = stockP.filter(i => i.month === prevMonth).reduce((s, i) => s + i.currentVal, 0);
+    const prevRentP  = rentP.filter(i => i.month === prevMonth).reduce((s, i) => s + i.deposit, 0);
+    const prevCardP  = currentDbData.card
+        .filter(i => i.month === prevMonth && !i.isPublic)
+        .filter(i => !paidCardSigs.includes(`${i.month}_${i.name}`))
+        .reduce((s, i) => s + i.amount, 0);
+    const prevTotalAssetsP = prevBankP + prevStockP + prevRentP - prevCardP;
+    const monthlySaving = prevTotalAssetsP > 0 ? (totalAssetsP - prevTotalAssetsP) : 0;
+    const monthlySpendingP = currentDbData.card.filter(i => i.month === nowMonth && !i.isPublic).reduce((s, i) => s + i.amount, 0);
+
+    // --- 3. UI 요약박스 업데이트 ---
+    document.getElementById('total-assets').innerText = totalAssetsP.toLocaleString() + "원";
+    document.getElementById('cur-spending').innerText = monthlySpendingP.toLocaleString() + "원";
+    const saveEl = document.getElementById('cur-save');
+    const sign = monthlySaving > 0 ? "▲" : (monthlySaving < 0 ? "▼" : "");
+    const saveColor = monthlySaving > 0 ? "#C3F400" : (monthlySaving < 0 ? "#ff4d4d" : "#ffffff");
+    saveEl.innerHTML = `${monthlySaving.toLocaleString()}원 <span style="font-size:10px; color:${saveColor}">${sign}</span>`;
+
+    // --- 4. 차트 렌더링 함수 (재사용 로직) ---
+    function drawChart(chartId, legendId, data) {
+        const chart = document.getElementById(chartId);
+        const legend = document.getElementById(legendId);
+        const total = data.reduce((sum, s) => sum + s.val, 0);
+        
+        if (total > 0) {
+            let cum = 0; let grad = [];
+            legend.innerHTML = '';
+            data.forEach(s => {
+                const p = (s.val / total * 100);
+                if (p > 0) {
+                    grad.push(`${s.color} ${cum}% ${cum + p}%`);
+                    cum += p;
+                    legend.innerHTML += `
+                    <div class="legend-item">
+                        <div class="legend-left">
+                            <div class="legend-dot" style="background:${s.color}"></div>
+                            ${s.label}
+                        </div>
+                        <div class="legend-right">
+                            ${p.toFixed(0)}% <span style="font-size: 11px; font-weight: normal; color: var(--text-muted); margin-left: 4px;">(${s.val.toLocaleString()}원)</span>
+                        </div>
+                    </div>`;
+                }
+            });
+            chart.style.background = `conic-gradient(${grad.join(', ')})`;
+        }
+    }
+
+    // --- 5. 개인 차트 실행 ---
+    const personalData = [
+        { label: '국내/외 주식', val: stockTotalP, color: '#1A3636' },
+        { label: '안전 예치금', val: bankTotalP, color: '#C3F400' },
+        { label: '기타 자산', val: rentTotalP, color: '#5E7171' }
+    ];
+    drawChart('asset-donut-chart', 'donut-legend', personalData);
+
+    // --- 6. 공금 차트 실행 ---
+    const bankTotalPb = bankPb.reduce((sum, i) => sum + i.amount, 0);
+    const stockTotalPb = stockPb.reduce((sum, i) => sum + i.currentVal, 0);
+    const rentTotalPb = rentPb.reduce((sum, i) => sum + i.deposit, 0);
+    const totalPb = bankTotalPb + stockTotalPb + rentTotalPb;
+
+    const publicCardCard = document.getElementById('public-chart-card');
+    if (totalPb > 0) {
+        publicCardCard.style.display = 'block'; // 데이터 있으면 보이기
+        const publicData = [
+            { label: '공유 주식', val: stockTotalPb, color: '#1E3A8A' }, // 진한 파랑
+            { label: '공유 예치금', val: bankTotalPb, color: '#3B82F6' }, // 파랑
+            { label: '공유 기타자산', val: rentTotalPb, color: '#93C5FD' } // 연한 파랑
+        ];
+        drawChart('public-donut-chart', 'public-donut-legend', publicData);
+    } else {
+        publicCardCard.style.display = 'none'; // 데이터 없으면 카드 숨기기
+    }
+}
+
+/*
 // 대시보드 도넛 차트 및 요약 로직
 function updateDashboard() {
     const now = new Date();
@@ -485,6 +590,7 @@ function updateDashboard() {
         pieChart.style.background = `conic-gradient(${grad.join(', ')})`;
     }
 }
+*/
 
 /* 3분할 이전 대시보드 로직
 function updateDashboard() {
