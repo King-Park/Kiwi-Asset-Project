@@ -89,6 +89,11 @@
 
                 <div id="bank" class="page">
                     <h2>은행 계좌 관리</h2>
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                            <button onclick="copyPrevMonth('bank')" style="width: auto; padding: 10px 15px; font-size: 13px; border-radius: 8px; background: #E5E7EB; color: var(--primary-color);">
+                                📋 전월과 동일 적용
+                            </button>
+                        </div>
                     <div class="form-card input-group">
                         <input type="month" id="bank-month"><input type="text" id="bank-name" placeholder="은행명">
                         <input type="number" id="bank-amount" placeholder="금액(KRW)"><input type="text" id="bank-note" placeholder="비고">
@@ -103,6 +108,9 @@
                 <div id="stock" class="page">
                     <h2>보유 주식 관리</h2>
                     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                         <button onclick="copyPrevMonth('stock')" style="width: auto; padding: 10px 15px; font-size: 13px; border-radius: 8px; background: #E5E7EB; color: var(--primary-color);">
+                            📋 전월과 동일 적용
+                        </button>
                         <button id="btn-update-prices" onclick="updateAllStockPrices()" style="width: auto; padding: 10px 15px; font-size: 13px; border-radius: 8px;">
                             🔄 현재가 수동 업데이트
                         </button>
@@ -154,6 +162,11 @@
 
                 <div id="rent" class="page">
                     <h2>거주 관리</h2>
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                        <button onclick="copyPrevMonth('rent')" style="width: auto; padding: 10px 15px; font-size: 13px; border-radius: 8px; background: #E5E7EB; color: var(--primary-color);">
+                            📋 전월과 동일 적용
+                        </button>
+                    </div>
                     <div class="form-card input-group">
                         <input type="month" id="rent-month"><input type="text" id="rent-type" placeholder="유형"><input type="number" id="rent-deposit" placeholder="보증금"><input type="number" id="rent-monthly" placeholder="월세">
                         <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">

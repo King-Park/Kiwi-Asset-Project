@@ -111,6 +111,62 @@ onAuthStateChanged(auth, (user) => {
         });
     }
 
+// --- 전월 데이터 당월 복사 ---
+window.copyPrevMonth = async function(type) {
+    if (!currentUser) {
+        alert("로그인 후 이용해 주세요.");
+        return;
+    }
+
+    // 전월 계산
+    const now = new Date();
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+    const nowMonth  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // 전월 데이터 조회
+    const prevItems = currentDbData[type].filter(i => i.month === prevMonth);
+
+    if (prevItems.length === 0) {
+        alert(`${prevMonth} 데이터가 없습니다.`);
+        return;
+    }
+
+    // 당월에 이미 데이터가 있으면 경고
+    const alreadyExists = currentDbData[type].some(i => i.month === nowMonth);
+    if (alreadyExists) {
+        if (!confirm(`${nowMonth}에 이미 데이터가 있습니다. 전월 데이터를 추가로 복사하시겠습니까?`)) return;
+    } else {
+        if (!confirm(`${prevMonth} 데이터 ${prevItems.length}건을 ${nowMonth}으로 복사하시겠습니까?`)) return;
+    }
+
+    try {
+        // 전월 데이터를 당월로 복사하여 일괄 추가
+        const copyPromises = prevItems.map(item => {
+            // 불필요한 필드 제거 후 당월로 교체
+            const { id, createdAt, currentVal, currentPrice, ...rest } = item;
+
+            const newEntry = {
+                ...rest,
+                uid: currentUser.uid,
+                month: nowMonth,
+                createdAt: new Date(),
+                // 주식의 경우 현재가는 0으로 초기화 (이후 수동 업데이트로 갱신)
+                ...(type === 'stock' && { currentVal: 0, currentPrice: 0 })
+            };
+
+            return addDoc(collection(db, type), newEntry);
+        });
+
+        await Promise.all(copyPromises);
+        alert(`${prevItems.length}건이 ${nowMonth}으로 복사되었습니다.${type === 'stock' ? '\n현재가는 [현재가 수동 업데이트] 버튼으로 갱신해 주세요.' : ''}`);
+
+    } catch (error) {
+        console.error("복사 오류:", error);
+        alert("복사 중 오류가 발생했습니다.");
+    }
+};
+
 // --- 4. 데이터 추가 및 수정 ---
 window.handleAddData = async function(type) {
     //비로그인 상태 방어
@@ -343,9 +399,10 @@ function updateDashboard() {
     const rentPb = currentDbData.rent.filter(i => i.isPublic);
 
     // --- 2. 상단 요약 박스 계산 (개인 자산 기준) ---
-    const bankTotalP = bankP.reduce((sum, i) => sum + i.amount, 0);
-    const stockTotalP = stockP.reduce((sum, i) => sum + i.currentVal, 0);
-    const rentTotalP = rentP.reduce((sum, i) => sum + i.deposit, 0);
+    // 수정: 당월 데이터만 필터링하여 합산
+    const bankTotalP  = bankP.filter(i => i.month === nowMonth).reduce((sum, i) => sum + i.amount, 0);
+    const stockTotalP = stockP.filter(i => i.month === nowMonth).reduce((sum, i) => sum + i.currentVal, 0);
+    const rentTotalP  = rentP.filter(i => i.month === nowMonth).reduce((sum, i) => sum + i.deposit, 0);
     
     const paidCardSigs = currentDbData.card.filter(i => i.cat === 'not set' && i.isPaid).map(i => `${i.month}_${i.name}`);
     const cardTotalP = currentDbData.card
@@ -367,7 +424,14 @@ function updateDashboard() {
         .reduce((s, i) => s + i.amount, 0);
     const prevTotalAssetsP = prevBankP + prevStockP + prevRentP - prevCardP;
     const monthlySaving = totalAssetsP - prevTotalAssetsP;
-    const monthlySpendingP = currentDbData.card.filter(i => i.month === nowMonth && !i.isPublic).reduce((s, i) => s + i.amount, 0);
+    const monthlyRentP = rentP
+        .filter(i => i.month === nowMonth)
+        .reduce((s, i) => s + (i.monthly ?? 0), 0);
+
+    const monthlySpendingP = currentDbData.card
+        .filter(i => i.month === nowMonth && !i.isPublic)
+        .reduce((s, i) => s + i.amount, 0)
+        + monthlyRentP;
 
 // --- 3. UI 요약박스 업데이트 ---
     
@@ -441,17 +505,19 @@ function updateDashboard() {
     }
 
     // --- 5. 개인 차트 실행 ---
+    // 444~448번째 줄 수정: 차트도 당월 기준으로 통일
     const personalData = [
-        { label: '국내/외 주식', val: stockTotalP, color: '#1A3636' },
-        { label: '예적금', val: bankTotalP, color: '#C3F400' },
-        { label: '보증금', val: rentTotalP, color: '#5E7171' }
+        { label: '국내/외 주식', val: stockP.filter(i => i.month === nowMonth).reduce((s, i) => s + i.currentVal, 0), color: '#1A3636' },
+        { label: '예적금',       val: bankP.filter(i => i.month === nowMonth).reduce((s, i) => s + i.amount, 0),      color: '#C3F400' },
+        { label: '보증금',       val: rentP.filter(i => i.month === nowMonth).reduce((s, i) => s + i.deposit, 0),     color: '#5E7171' }
     ];
     drawChart('asset-donut-chart', 'donut-legend', personalData);
 
     // --- 6. 공금 차트 실행 ---
-    const bankTotalPb = bankPb.reduce((sum, i) => sum + i.amount, 0);
-    const stockTotalPb = stockPb.reduce((sum, i) => sum + i.currentVal, 0);
-    const rentTotalPb = rentPb.reduce((sum, i) => sum + i.deposit, 0);
+// ✅ 452~454번째 줄 수정
+    const bankTotalPb  = bankPb.filter(i => i.month === nowMonth).reduce((sum, i) => sum + i.amount, 0);
+    const stockTotalPb = stockPb.filter(i => i.month === nowMonth).reduce((sum, i) => sum + i.currentVal, 0);
+    const rentTotalPb  = rentPb.filter(i => i.month === nowMonth).reduce((sum, i) => sum + i.deposit, 0);
     const totalPb = bankTotalPb + stockTotalPb + rentTotalPb;
 
     const publicCardCard = document.getElementById('public-chart-card');
