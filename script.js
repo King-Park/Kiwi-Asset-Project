@@ -441,12 +441,19 @@ function updateDashboard() {
     const monthlySpendingP = currentDbData.card.filter(i => i.month === nowMonth && !i.isPublic).reduce((s, i) => s + i.amount, 0);
 
     // --- 3. UI 요약박스 업데이트 ---
-    document.getElementById('total-assets').innerText = totalAssetsP.toLocaleString() + "원";
+// --- 3. UI 요약박스 업데이트 ---
+    // ✅ 총 자산을 만원 단위로 계산 (소수점 버림)
+    const manwonAssets = Math.trunc(totalAssetsP / 10000).toLocaleString();
+    
+    // ✅ 큰 글씨로 만원 표기 + 줄바꿈 + 작은 글씨로 원본 금액 표기
+    document.getElementById('total-assets').innerHTML = 
+        `${manwonAssets}만원 <br>
+         <span style="font-size: 14px; font-weight: normal; color: var(--text-muted); margin-top: 4px; display: inline-block;">
+            (${Math.round(totalAssetsP).toLocaleString()}원)
+         </span>`;
+         
     document.getElementById('cur-spending').innerText = monthlySpendingP.toLocaleString() + "원";
     const saveEl = document.getElementById('cur-save');
-    const sign = monthlySaving > 0 ? "▲" : (monthlySaving < 0 ? "▼" : "");
-    const saveColor = monthlySaving > 0 ? "#C3F400" : (monthlySaving < 0 ? "#ff4d4d" : "#ffffff");
-    saveEl.innerHTML = `${monthlySaving.toLocaleString()}원 <span style="font-size:10px; color:${saveColor}">${sign}</span>`;
 
     // --- 4. 차트 렌더링 함수 (재사용 로직) ---
     function drawChart(chartId, legendId, data) {
@@ -696,7 +703,7 @@ window.handleMonthlyDelete = async function() {
 initInputs();
 
 // 방금 복사한 구글 웹 앱 URL을 아래에 붙여넣으세요.
-const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbzcClomr3WcVw7p14zZlj9CAWplkV2MP1jsViz5a5r1nfgPhbKry7ZC24KlHhNTi85zgQ/exec";
+const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbweD0jjxWeKqgiVi4OTHE3BTxynKhSUZrb8trWq3WGrM365Ym_aTTz-whGBqbcz_pSTxw/exec";
 
 
 // --- 실시간 환율 가져오기 (무료 API, 캐싱 적용) ---
