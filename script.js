@@ -188,30 +188,27 @@ window.addFinalCardAmount = async function() {
     const month = document.getElementById('card-final-month').value;
     const name = document.getElementById('card-final-name').value;
     const finalAmount = Number(document.getElementById('card-final-amount').value);
-    
-    // 기존에 개별 등록된 지출의 합계 계산
+    const isPaid = document.getElementById('card-final-isPaid').checked;
     const currentSum = currentDbData.card.filter(i => i.month === month && i.name === name && i.cat !== 'not set').reduce((s, i) => s + i.amount, 0);
     
     if (finalAmount <= currentSum) {
         return alert("이미 등록된 개별 지출의 합계가 명세서 총액보다 큽니다.");
     }
 
-    // 수정 모드일 때의 로직 추가
     if (editInfo.type === 'card' && editInfo.id) {
         await updateDoc(doc(db, "card", editInfo.id), {
             month,
             name,
             amount: finalAmount - currentSum,
-            date: `${month}-28`
-            // 수정 시에는 기존 createdAt을 유지합니다.
+            date: `${month}-28`,
+            isPaid // 수정 시 DB에 상태 업데이트
         });
         
-        editInfo = { type: null, id: null }; // 수정 정보 초기화
-        document.getElementById('card-final-btn').innerText = "명세서 추가"; // 버튼 이름 원복
+        editInfo = { type: null, id: null }; 
+        document.getElementById('card-final-btn').innerText = "명세서 추가"; 
         alert("명세서 내역이 수정되었습니다.");
         
     } else {
-        // ✅ 신규 추가 로직 (createdAt 필드 추가)
         await addDoc(collection(db, "card"), { 
             uid: currentUser.uid, 
             month, 
@@ -219,13 +216,15 @@ window.addFinalCardAmount = async function() {
             amount: finalAmount - currentSum, 
             cat: 'not set', 
             date: `${month}-28`,
-            createdAt: new Date() // ⭐️ 핵심 해결책: 생성일자 데이터 포함
+            createdAt: new Date(),
+            isPaid // 신규 추가 시 DB에 저장
         });
         alert("명세서 차액이 성공적으로 등록되었습니다.");
     }
 
-    // ✅ UI 피드백: 처리 완료 후 금액 입력칸 비우기
+    // UI 피드백 초기화
     document.getElementById('card-final-amount').value = '';
+    document.getElementById('card-final-isPaid').checked = false; // 체크박스 초기화
 };
 
 /* 기존 명세서 함수
@@ -252,6 +251,7 @@ window.editData = function(type, id) {
             document.getElementById('card-final-name').value = item.name;
             const curSum = currentDbData.card.filter(i => i.month === item.month && i.name === item.name && i.id !== id).reduce((s, i) => s + i.amount, 0);
             document.getElementById('card-final-amount').value = curSum + item.amount;
+            document.getElementById('card-final-isPaid').checked = item.isPaid || false;
             document.getElementById('card-final-btn').innerText = "수정 완료";
         } else {
             document.getElementById('card-date').value = item.date; 
@@ -287,7 +287,59 @@ window.editData = function(type, id) {
     }
 };
 
-// --- 데이터 테이블 렌더링 ---
+// [전체 교체] script.js의 renderTables 함수
+function renderTables() {
+    ['bank', 'card', 'rent', 'stock'].forEach(type => {
+        const tbody = document.querySelector(`#${type}-table tbody`);
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        if (!currentDbData[type] || currentDbData[type].length === 0) return;
+
+        // 최신순 정렬
+        const sorted = [...currentDbData[type]].sort((a, b) => {
+            const aMonth = a.month || "";
+            const bMonth = b.month || "";
+            return bMonth.localeCompare(aMonth);
+        });
+
+        sorted.forEach(item => {
+            let row = '';
+            const amount = item.amount ?? item.currentVal ?? item.deposit ?? 0;
+            const dateText = item.date || item.month || '-';
+
+            // ✅ 비고란 텍스트 정의 (은행 항목일 경우 날짜 뒤에 불렛 기호와 함께 표시)
+            const noteText = (type === 'bank' && item.note) ? ` • ${item.note}` : '';
+
+            if (type === 'card') {
+                const paidBadge = (item.cat === 'not set' && item.isPaid) ? `[결제완료] ` : '';
+                row = `<tr>
+                    <td>${dateText} • ${item.cat || '-'}</td>
+                    <td><b>${paidBadge}${item.name || '알 수 없음'}</b></td>
+                    <td style="text-align:right">
+                        <b>${amount.toLocaleString()}원</b><br>
+                        <button class="btn-edit" onclick="editData('card', '${item.id}')">수정</button>
+                        <button class="btn-delete" onclick="deleteData('card', '${item.id}')">삭제</button>
+                    </td>
+                </tr>`;
+            } else {
+                // ✅ 비고(noteText)를 첫 번째 <td>에 넣어 날짜 스타일(12px, 회색)을 그대로 적용
+                row = `<tr>
+                    <td>${dateText}${noteText}</td>
+                    <td><b>${item.name || item.type || '알 수 없음'}</b></td>
+                    <td style="text-align:right">
+                        <b>${amount.toLocaleString()}원</b><br>
+                        <button class="btn-edit" onclick="editData('${type}', '${item.id}')">수정</button>
+                        <button class="btn-delete" onclick="deleteData('${type}', '${item.id}')">삭제</button>
+                    </td>
+                </tr>`;
+            }
+            tbody.innerHTML += row;
+        });
+    });
+}
+
+/* --- 데이터 테이블 렌더링 ---
     function renderTables() {
         ['bank', 'card', 'rent', 'stock'].forEach(type => {
             const tbody = document.querySelector(`#${type}-table tbody`);
@@ -308,6 +360,8 @@ window.editData = function(type, id) {
 
                 if (type === 'card') {
                     const amount = item.amount ?? 0;
+                    // 결제 완료된 명세서일 경우 이름 앞에 뱃지 추가
+                    const paidBadge = (item.cat === 'not set' && item.isPaid) ? `<span style="color:var(--primary-color); font-size:11px; font-weight:800;">[결제완료]</span> ` : '';
                     row = `<tr>
                         <td><b>${item.name || '알 수 없음'}</b>
                         <br><small>${item.date || item.month || '-'} • ${item.cat || '-'}</small></td>
@@ -323,6 +377,8 @@ window.editData = function(type, id) {
                     else if (type === 'rent')  displayAmount = item.deposit ?? 0;
                     else                       displayAmount = 0;
 
+                    const noteHtml = (type === 'bank' && item.note) ? `<br><span style="color:var(--text-muted); font-size:11px;">비고: ${item.note}</span>` : '';
+
                     row = `<tr>
                         <td><b>${item.name || item.type || '알 수 없음'}</b>
                         <br><small>${item.month || '날짜 없음'}</small></td>
@@ -337,6 +393,7 @@ window.editData = function(type, id) {
             });
         });
     }
+*/
     
     // 요약 테이블 함수 호출 (정의되어 있을 경우)
     /* 미사용으로 인해 주석처리 
@@ -355,9 +412,15 @@ function updateDashboard() {
     const stockCurrTotal = currentDbData.stock.reduce((sum, i) => sum + i.currentVal, 0);
     const rentTotal = currentDbData.rent.reduce((sum, i) => sum + i.deposit, 0);
 
-    // ✅ 이번 달 카드 지출만 순자산에서 차감
+    // 추가: 결제 완료(isPaid) 처리된 명세서의 고유값(예: "2024-05_현대카드") 목록 추출
+    const paidCardSignatures = currentDbData.card
+        .filter(i => i.cat === 'not set' && i.isPaid)
+        .map(i => `${i.month}_${i.name}`);
+
+    // 이번 달 카드 지출 계산 시, 결제 완료된 카드는 부채(차감)에서 제외
     const thisMonthCardTotal = currentDbData.card
         .filter(i => i.month === nowMonth)
+        .filter(i => !paidCardSignatures.includes(`${i.month}_${i.name}`)) // 일치하면 필터링하여 제외
         .reduce((sum, i) => sum + i.amount, 0);
 
     const totalAssets = bankTotal + stockCurrTotal + rentTotal - thisMonthCardTotal;
@@ -371,8 +434,11 @@ function updateDashboard() {
     const prevBank  = currentDbData.bank.filter(i => i.month === prevMonth).reduce((s, i) => s + i.amount, 0);
     const prevStock = currentDbData.stock.filter(i => i.month === prevMonth).reduce((s, i) => s + i.currentVal, 0);
     const prevRent  = currentDbData.rent.filter(i => i.month === prevMonth).reduce((s, i) => s + i.deposit, 0);
-    // ✅ 지난달 순자산 계산 시에도 동일하게 해당 월 카드 지출만 차감
-    const prevCard  = currentDbData.card.filter(i => i.month === prevMonth).reduce((s, i) => s + i.amount, 0);
+    // 지난달 순자산 계산 시에도 결제 완료된 카드는 부채에서 제외
+    const prevCard  = currentDbData.card
+        .filter(i => i.month === prevMonth)
+        .filter(i => !paidCardSignatures.includes(`${i.month}_${i.name}`))
+        .reduce((s, i) => s + i.amount, 0);
     const prevTotalAssets = prevBank + prevStock + prevRent - prevCard;
 
     // 3. 이번 달 총 저축

@@ -118,8 +118,15 @@
                         <button onclick="handleAddData('card')" id="card-btn">추가하기</button>
                     </div>
                     <div id="card-final-entry" class="form-card input-group" style="display:none;">
-                        <input type="month" id="card-final-month"><input type="text" id="card-final-name" placeholder="카드사 명">
+                        <input type="month" id="card-final-month">
+                        <input type="text" id="card-final-name" placeholder="카드사 명">
                         <input type="number" id="card-final-amount" placeholder="명세서 총액">
+                        
+                        <label style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-color); cursor: pointer;">
+                            <input type="checkbox" id="card-final-isPaid" style="width: auto; margin: 0; cursor: pointer;"> 
+                            대금 결제 완료 (체크 시 순자산에서 이중 차감 안 함)
+                        </label>
+                        
                         <button onclick="addFinalCardAmount()" id="card-final-btn">입력</button>
                     </div>
                     <table id="card-summary-table" class="summary-table"><tbody></tbody></table>
