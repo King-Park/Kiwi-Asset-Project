@@ -1,11 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, getDocs, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, getDocs, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- 1. 본인의 Firebase Config 정보를 여기에 붙여넣으세요 ---
 const firebaseConfig = {
   apiKey: "AIzaSyBxUJwgACeYfiY1s1skng0UZuvURo7R3CQ",
-  authDomain: "project-dnn.firebaseapp.com",
+  authDomain: "project-dnn.web.app",
   projectId: "project-dnn",
   storageBucket: "project-dnn.firebasestorage.app",
   messagingSenderId: "595279356896",
@@ -37,24 +37,25 @@ function clearAllListeners() {
 }
 
 // --- 2. 로그인/로그아웃 처리 ---
-// 로그인 버튼 함수를 전역으로 노출
-// ✅ 모바일 Safari는 팝업 차단 → redirect로 분기
 window.handleGoogleLogin = () => {
-        const isMobileSafari = /iP(ad|hone|od)/.test(navigator.userAgent)
-                        && /WebKit/.test(navigator.userAgent)
-                        && !/CriOS/.test(navigator.userAgent);
+    const isLocalhost = window.location.hostname === 'localhost'
+                     || window.location.hostname === '127.0.0.1';
+    if (isLocalhost) {
+        signInWithPopup(auth, provider);
+    } else {
+        signInWithRedirect(auth, provider);
+    }
+};
 
-        if (isMobileSafari) {
-            signInWithRedirect(auth, provider);
-        } else {
-            signInWithPopup(auth, provider);
-        }
-    };
-
-    // ✅ redirect 후 돌아왔을 때 결과 처리
-    getRedirectResult(auth).catch(error => {
-        console.error("Redirect 로그인 실패:", error);
+// ✅ 전역에서 한 번만 실행 — redirect 후 돌아왔을 때 로그인 결과 처리
+getRedirectResult(auth).then(result => {
+    if (result && result.user) {
+        console.log("Redirect 로그인 성공:", result.user.email);
+    }
+}).catch(error => {
+    console.error("Redirect 로그인 실패:", error);
 });
+
 document.getElementById('logout-btn').onclick = () => { if(confirm("로그아웃 하시겠습니까?")) signOut(auth); };
 
 onAuthStateChanged(auth, (user) => {
@@ -620,7 +621,7 @@ window.handleMonthlyDelete = async function() {
 initInputs();
 
 // 방금 복사한 구글 웹 앱 URL을 아래에 붙여넣으세요.
-const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbz5xzyzXFUfro-Bcqzz6hNgtN_8vhFvabQKCit1kZIqyhQ56mTJuTe_JCuFGJiwtfNnRQ/exec";
+const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbyw5PZhPa60oNbTFaOQiGnAYLqoSgx1c_6n0IbrkoSq8CKqLo7B21QZ34bGY-kgqFRuaQ/exec";
 
 
 // --- 실시간 환율 가져오기 (무료 API, 캐싱 적용) ---
