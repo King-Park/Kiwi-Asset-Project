@@ -224,16 +224,6 @@ window.addFinalCardAmount = async function() {
     document.getElementById('card-final-isPublic').checked = false;
 };
 
-/* 기존 명세서 함수
-window.addFinalCardAmount = async function() {
-    const month = document.getElementById('card-final-month').value;
-    const name = document.getElementById('card-final-name').value;
-    const finalAmount = Number(document.getElementById('card-final-amount').value);
-    const currentSum = currentDbData.card.filter(i => i.month === month && i.name === name && i.cat !== 'not set').reduce((s, i) => s + i.amount, 0);
-    if (finalAmount <= currentSum) return alert("이미 합계가 더 큽니다.");
-    await addDoc(collection(db, "card"), { uid: currentUser.uid, month, name, amount: finalAmount - currentSum, cat: 'not set', date: `${month}-28` });
-}; */
-
 window.deleteData = async function(type, id) { if(confirm("정말 삭제하시겠습니까?")) await deleteDoc(doc(db, type, id)); };
 
 // --- 데이터 수정 (폼에 기존 데이터 불러오기) ---
@@ -338,67 +328,6 @@ function renderTables() {
     });
 }
 
-/* --- 데이터 테이블 렌더링 ---
-    function renderTables() {
-        ['bank', 'card', 'rent', 'stock'].forEach(type => {
-            const tbody = document.querySelector(`#${type}-table tbody`);
-            if (!tbody) return;
-
-            tbody.innerHTML = '';
-
-            if (!currentDbData[type] || currentDbData[type].length === 0) return;
-
-            const sorted = [...currentDbData[type]].sort((a, b) => {
-                const aMonth = a.month || "";
-                const bMonth = b.month || "";
-                return bMonth.localeCompare(aMonth);
-            });
-
-            sorted.forEach(item => {
-                let row = '';
-
-                if (type === 'card') {
-                    const amount = item.amount ?? 0;
-                    // 결제 완료된 명세서일 경우 이름 앞에 뱃지 추가
-                    const paidBadge = (item.cat === 'not set' && item.isPaid) ? `<span style="color:var(--primary-color); font-size:11px; font-weight:800;">[결제완료]</span> ` : '';
-                    row = `<tr>
-                        <td><b>${item.name || '알 수 없음'}</b>
-                        <br><small>${item.date || item.month || '-'} • ${item.cat || '-'}</small></td>
-                        <td style="text-align:right">
-                        <b>${amount.toLocaleString()}원</b><br>
-                        <button class="btn-edit" onclick="editData('card', '${item.id}')">수정</button>
-                        <button class="btn-delete" onclick="deleteData('card', '${item.id}')">삭제</button>
-                        </td></tr>`;
-                } else {
-                    let displayAmount;
-                    if (type === 'bank')       displayAmount = item.amount ?? 0;
-                    else if (type === 'stock') displayAmount = item.currentVal ?? 0;
-                    else if (type === 'rent')  displayAmount = item.deposit ?? 0;
-                    else                       displayAmount = 0;
-
-                    const noteHtml = (type === 'bank' && item.note) ? `<br><span style="color:var(--text-muted); font-size:11px;">비고: ${item.note}</span>` : '';
-
-                    row = `<tr>
-                        <td><b>${item.name || item.type || '알 수 없음'}</b>
-                        <br><small>${item.month || '날짜 없음'}</small></td>
-                        <td style="text-align:right">
-                        <b>${displayAmount.toLocaleString()}원</b><br>
-                        <button class="btn-edit" onclick="editData('${type}', '${item.id}')">수정</button>
-                        <button class="btn-delete" onclick="deleteData('${type}', '${item.id}')">삭제</button>
-                        </td></tr>`;
-                }
-
-                tbody.innerHTML += row;
-            });
-        });
-    }
-*/
-    
-    // 요약 테이블 함수 호출 (정의되어 있을 경우)
-    /* 미사용으로 인해 주석처리 
-    if (typeof renderStockSummary === 'function') renderStockSummary(); 
-    if (typeof renderCardSummary === 'function') renderCardSummary();
-    */
 
 // [전체 교체] script.js의 updateDashboard 함수
 function updateDashboard() {
@@ -437,23 +366,49 @@ function updateDashboard() {
         .filter(i => !paidCardSigs.includes(`${i.month}_${i.name}`))
         .reduce((s, i) => s + i.amount, 0);
     const prevTotalAssetsP = prevBankP + prevStockP + prevRentP - prevCardP;
-    const monthlySaving = prevTotalAssetsP > 0 ? (totalAssetsP - prevTotalAssetsP) : 0;
+    const monthlySaving = totalAssetsP - prevTotalAssetsP;
     const monthlySpendingP = currentDbData.card.filter(i => i.month === nowMonth && !i.isPublic).reduce((s, i) => s + i.amount, 0);
 
-    // --- 3. UI 요약박스 업데이트 ---
 // --- 3. UI 요약박스 업데이트 ---
-    // ✅ 총 자산을 만원 단위로 계산 (소수점 버림)
-    const manwonAssets = Math.trunc(totalAssetsP / 10000).toLocaleString();
     
-    // ✅ 큰 글씨로 만원 표기 + 줄바꿈 + 작은 글씨로 원본 금액 표기
+    // ① 총 순자산 (만원 단위 + 원본 소수점 제거)
+    const manwonAssets = Math.trunc(totalAssetsP / 10000).toLocaleString();
     document.getElementById('total-assets').innerHTML = 
         `${manwonAssets}만원 <br>
          <span style="font-size: 14px; font-weight: normal; color: var(--text-muted); margin-top: 4px; display: inline-block;">
             (${Math.round(totalAssetsP).toLocaleString()}원)
          </span>`;
-         
-    document.getElementById('cur-spending').innerText = monthlySpendingP.toLocaleString() + "원";
+
+    // ② 이번 달 총 지출 (만원 단위 + 원본 소수점 제거)
+    const manwonSpending = Math.trunc(monthlySpendingP / 10000).toLocaleString();
+    document.getElementById('cur-spending').innerHTML = 
+        `${manwonSpending}만원 <br>
+         <span style="font-size: 14px; font-weight: normal; color: var(--text-muted); margin-top: 4px; display: inline-block;">
+            (${Math.round(monthlySpendingP).toLocaleString()}원)
+         </span>`;
+
+    // ③ 전월 변동금액 비교 (만원 단위 + 원본 소수점 제거 + 색상 처리)
     const saveEl = document.getElementById('cur-save');
+    let changeTextManwon = "0만원";
+    let changeTextWon = "(0원)";
+    let changeColor = "var(--text-color)"; // 변동 없을 시 기본 텍스트 색상
+
+    if (monthlySaving > 0) {
+        changeTextManwon = `+ ${Math.trunc(monthlySaving / 10000).toLocaleString()}만원`;
+        changeTextWon = `(+ ${Math.round(monthlySaving).toLocaleString()}원)`;
+        changeColor = "#EF4444"; // 상승 시 붉은색
+    } else if (monthlySaving < 0) {
+        changeTextManwon = `- ${Math.trunc(Math.abs(monthlySaving) / 10000).toLocaleString()}만원`;
+        changeTextWon = `(- ${Math.round(Math.abs(monthlySaving)).toLocaleString()}원)`;
+        changeColor = "#3B82F6"; // 하락 시 파란색
+    }
+
+    // 폰트 색상과 굵기를 적용하여 HTML 삽입
+    saveEl.innerHTML = `
+        <span style="color: ${changeColor}; font-weight: bold;">${changeTextManwon}</span> <br>
+        <span style="font-size: 14px; font-weight: normal; color: var(--text-muted); margin-top: 4px; display: inline-block;">
+            ${changeTextWon}
+        </span>`;
 
     // --- 4. 차트 렌더링 함수 (재사용 로직) ---
     function drawChart(chartId, legendId, data) {
@@ -488,8 +443,8 @@ function updateDashboard() {
     // --- 5. 개인 차트 실행 ---
     const personalData = [
         { label: '국내/외 주식', val: stockTotalP, color: '#1A3636' },
-        { label: '안전 예치금', val: bankTotalP, color: '#C3F400' },
-        { label: '기타 자산', val: rentTotalP, color: '#5E7171' }
+        { label: '예적금', val: bankTotalP, color: '#C3F400' },
+        { label: '보증금', val: rentTotalP, color: '#5E7171' }
     ];
     drawChart('asset-donut-chart', 'donut-legend', personalData);
 
@@ -504,7 +459,7 @@ function updateDashboard() {
         publicCardCard.style.display = 'block'; // 데이터 있으면 보이기
         const publicData = [
             { label: '공유 주식', val: stockTotalPb, color: '#1E3A8A' }, // 진한 파랑
-            { label: '공유 예치금', val: bankTotalPb, color: '#3B82F6' }, // 파랑
+            { label: '공유 예금', val: bankTotalPb, color: '#3B82F6' }, // 파랑
             { label: '공유 기타자산', val: rentTotalPb, color: '#93C5FD' } // 연한 파랑
         ];
         drawChart('public-donut-chart', 'public-donut-legend', publicData);
@@ -512,126 +467,6 @@ function updateDashboard() {
         publicCardCard.style.display = 'none'; // 데이터 없으면 카드 숨기기
     }
 }
-
-/*
-// 대시보드 도넛 차트 및 요약 로직
-function updateDashboard() {
-    const now = new Date();
-    const nowMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-
-    // 1. 현재 전체 순자산 계산
-    const bankTotal = currentDbData.bank.reduce((sum, i) => sum + i.amount, 0);
-    const stockCurrTotal = currentDbData.stock.reduce((sum, i) => sum + i.currentVal, 0);
-    const rentTotal = currentDbData.rent.reduce((sum, i) => sum + i.deposit, 0);
-
-    // 추가: 결제 완료(isPaid) 처리된 명세서의 고유값(예: "2024-05_현대카드") 목록 추출
-    const paidCardSignatures = currentDbData.card
-        .filter(i => i.cat === 'not set' && i.isPaid)
-        .map(i => `${i.month}_${i.name}`);
-
-    // 이번 달 카드 지출 계산 시, 결제 완료된 카드는 부채(차감)에서 제외
-    const thisMonthCardTotal = currentDbData.card
-        .filter(i => i.month === nowMonth)
-        .filter(i => !paidCardSignatures.includes(`${i.month}_${i.name}`)) // 일치하면 필터링하여 제외
-        .reduce((sum, i) => sum + i.amount, 0);
-
-    const totalAssets = bankTotal + stockCurrTotal + rentTotal - thisMonthCardTotal;
-
-    // 2. 지난달 순자산 계산 (저축액 산출용)
-    let d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevMonth = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
-
-    const prevBank  = currentDbData.bank.filter(i => i.month === prevMonth).reduce((s, i) => s + i.amount, 0);
-    const prevStock = currentDbData.stock.filter(i => i.month === prevMonth).reduce((s, i) => s + i.currentVal, 0);
-    const prevRent  = currentDbData.rent.filter(i => i.month === prevMonth).reduce((s, i) => s + i.deposit, 0);
-    // 지난달 순자산 계산 시에도 결제 완료된 카드는 부채에서 제외
-    const prevCard  = currentDbData.card
-        .filter(i => i.month === prevMonth)
-        .filter(i => !paidCardSignatures.includes(`${i.month}_${i.name}`))
-        .reduce((s, i) => s + i.amount, 0);
-    const prevTotalAssets = prevBank + prevStock + prevRent - prevCard;
-
-    // 3. 이번 달 총 저축
-    const monthlySaving = prevTotalAssets > 0 ? (totalAssets - prevTotalAssets) : 0;
-
-    // 4. 이번 달 총 지출액 (대시보드 카드 표시용 - 기존과 동일)
-    const monthlySpending = currentDbData.card
-        .filter(i => i.month === nowMonth)
-        .reduce((s, i) => s + i.amount, 0);
-        
-    // --- UI 업데이트 ---
-    
-    // 총 순자산
-    document.getElementById('total-assets').innerText = totalAssets.toLocaleString() + "원";
-    
-    // 총 저축 (상/하 화살표 표시)
-    const saveEl = document.getElementById('cur-save');
-    const sign = monthlySaving > 0 ? "▲" : (monthlySaving < 0 ? "▼" : "");
-    const saveColor = monthlySaving > 0 ? "#C3F400" : (monthlySaving < 0 ? "#ff4d4d" : "#ffffff");
-    saveEl.innerHTML = `${monthlySaving.toLocaleString()}원 <span style="font-size:10px; color:${saveColor}">${sign}</span>`;
-
-    // 총 지출액
-    document.getElementById('cur-spending').innerText = monthlySpending.toLocaleString() + "원";
-
-    // 도넛 차트 로직 (기존 유지)
-    const pieChart = document.getElementById('asset-donut-chart');
-    const legend = document.getElementById('donut-legend');
-    const total = bankTotal + stockCurrTotal + rentTotal;
-    if(total > 0) {
-        const segs = [
-            { label: '국내/외 주식', val: stockCurrTotal, color: '#1A3636' },
-            { label: '안전 예치금', val: bankTotal, color: '#C3F400' },
-            { label: '기타 자산', val: rentTotal, color: '#5E7171' }
-        ];
-        let cum = 0; let grad = [];
-        legend.innerHTML = '';
-        segs.forEach(s => {
-            const p = (s.val / total * 100);
-            if(p > 0) {
-                grad.push(`${s.color} ${cum}% ${cum + p}%`); cum += p;
-                legend.innerHTML += `<div class="legend-item"><div class="legend-left"><div class="legend-dot" style="background:${s.color}"></div>${s.label}</div><div class="legend-right">${p.toFixed(0)}%</div></div>`;
-            }
-        });
-        pieChart.style.background = `conic-gradient(${grad.join(', ')})`;
-    }
-}
-*/
-
-/* 3분할 이전 대시보드 로직
-function updateDashboard() {
-    const bankTotal = currentDbData.bank.reduce((sum, i) => sum + i.amount, 0);
-    const stockCurrTotal = currentDbData.stock.reduce((sum, i) => sum + i.currentVal, 0);
-    const cardTotal = currentDbData.card.reduce((sum, i) => sum + i.amount, 0);
-    const rentTotal = currentDbData.rent.reduce((sum, i) => sum + i.deposit, 0);
-    const totalAssets = bankTotal + stockCurrTotal + rentTotal - cardTotal;
-    
-    document.getElementById('total-assets').innerText = totalAssets.toLocaleString() + "원";
-    document.getElementById('cur-save').innerText = (bankTotal + stockCurrTotal).toLocaleString() + "원";
-
-    const pieChart = document.getElementById('asset-donut-chart');
-    const legend = document.getElementById('donut-legend');
-    const total = bankTotal + stockCurrTotal + rentTotal;
-    if(total > 0) {
-        const segs = [
-            { label: '국내/외 주식', val: stockCurrTotal, color: '#1A3636' },
-            { label: '안전 예치금', val: bankTotal, color: '#C3F400' },
-            { label: '기타 자산', val: rentTotal, color: '#5E7171' }
-        ];
-        let cum = 0; let grad = [];
-        legend.innerHTML = '';
-        segs.forEach(s => {
-            const p = (s.val / total * 100);
-            if(p > 0) {
-                grad.push(`${s.color} ${cum}% ${cum + p}%`); cum += p;
-                legend.innerHTML += `<div class="legend-item"><div class="legend-left"><div class="legend-dot" style="background:${s.color}"></div>${s.label}</div><div class="legend-right">${p.toFixed(0)}%</div></div>`;
-            }
-        });
-        pieChart.style.background = `conic-gradient(${grad.join(', ')})`;
-    }
-}
-*/
 
 // 공통 유틸
 // 기존 window.showPage = (id) => { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); };
