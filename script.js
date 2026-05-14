@@ -501,3 +501,25 @@ window.handleMonthlyDelete = async function() {
 
 // ✅ 추가: 페이지 로드 시 날짜 입력 필드 기본값 세팅
 initInputs();
+
+// 방금 복사한 구글 웹 앱 URL을 아래에 붙여넣으세요.
+const MY_FREE_API_URL = "https://script.google.com/macros/s/AKfycbw0SijH8dIwaQqbekHtPkKtrlwRrBzLpuZb-k9CXhwpxAu1jqLW1MFm-QkLrvCwQuYJqQ/exec";
+
+async function fetchStockPrice(ticker) {
+    try {
+        // 티커 예시: 삼성전자는 '005930.KS', 카카오는 '035720.KS', 애플은 'AAPL', 테슬라는 'TSLA'
+        const response = await fetch(`${MY_FREE_API_URL}?ticker=${ticker}`);
+        const data = await response.json();
+        
+        if (data.price) {
+            console.log(`${ticker}의 현재가: ${data.price}`);
+            return data.price;
+        } else {
+            console.error("가격 조회 실패:", data.error);
+            return 0;
+        }
+    } catch (error) {
+        console.error("API 호출 에러:", error);
+        return 0;
+    }
+}
