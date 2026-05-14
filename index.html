@@ -89,11 +89,18 @@
 
                 <div id="stock" class="page">
                     <h2>보유 주식 관리</h2>
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                        <button id="btn-update-prices" onclick="updateAllStockPrices()" style="width: auto; padding: 10px 15px; font-size: 13px; border-radius: 8px;">
+                            🔄 현재가 수동 업데이트
+                        </button>
+                    </div>
                     <div class="form-card input-group">
-                        <input type="month" id="stock-month"><input type="text" id="stock-name" placeholder="종목명">
-                        <input type="number" id="stock-count" placeholder="수량"><input type="number" id="stock-avg" placeholder="평단가">
-                        <input type="number" id="stock-current" placeholder="현재가">
-                        <button onclick="handleAddData('stock')" id="stock-btn">업데이트</button>
+                        <input type="month" id="stock-month">
+                        <input type="text" id="stock-name" placeholder="종목명 (예: 삼성전자)">
+                        <input type="text" id="stock-ticker" placeholder="종목코드 (예: 005930.KS)">
+                        <input type="number" id="stock-count" placeholder="수량">
+                        <input type="number" id="stock-avg" placeholder="평단가">
+                        <button onclick="handleAddData('stock')" id="stock-btn">기록 추가</button>
                     </div>
                     <table id="stock-summary-table" class="summary-table"><tbody></tbody></table>
                     <table id="stock-table"><tbody></tbody></table>

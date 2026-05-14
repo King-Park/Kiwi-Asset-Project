@@ -59,6 +59,7 @@ onAuthStateChanged(auth, (user) => {
         overlay.style.display = 'none'; // 배너 숨기기
         nav.style.display = 'flex';     // 메뉴 보이기
         syncData(); 
+        checkAfternoonAutoUpdate(); // 로그인 성공 시 4시 이후인지 확인하고 자동 업데이트 트리거
     } else {
         // 2. 로그아웃 또는 비로그인 시
         currentUser = null;
@@ -122,10 +123,16 @@ window.handleAddData = async function(type) {
             entry.note = document.getElementById('bank-note').value;
         } else if (type === 'stock') {
             const count = Number(document.getElementById('stock-count').value);
-            const curr = Number(document.getElementById('stock-current').value);
-            entry.name = document.getElementById('stock-name').value; entry.count = count;
+            const ticker = document.getElementById('stock-ticker').value.trim();
+            entry.name = document.getElementById('stock-name').value; 
+            entry.ticker = ticker; // ✅ 종목코드 저장
+            entry.count = count;
             entry.investment = count * Number(document.getElementById('stock-avg').value);
-            entry.currentVal = count * curr; entry.currentPrice = curr;
+            
+            // ✅ 추가 시점에 현재가를 1회 긁어와서 저장
+            const fetchedPrice = ticker ? await fetchStockPrice(ticker) : 0;
+            entry.currentPrice = fetchedPrice;
+            entry.currentVal = count * fetchedPrice;
         } else if (type === 'rent') {
             entry.type = document.getElementById('rent-type').value;
             entry.deposit = Number(document.getElementById('rent-deposit').value);
@@ -228,19 +235,14 @@ window.editData = function(type, id) {
             document.getElementById('bank-name').value = item.name; 
             document.getElementById('bank-amount').value = item.amount; 
             document.getElementById('bank-note').value = item.note || ''; 
-        } 
-        else if (type === 'stock') {
+        } else if (type === 'stock') {
             document.getElementById('stock-name').value = item.name;
+            document.getElementById('stock-ticker').value = item.ticker || ''; // 종목코드 불러오기
             document.getElementById('stock-count').value = item.count;
-            
-            // DB에 저장된 총 투자금과 현재가치로 평단가와 현재가를 역산하여 폼에 입력
+            // 평단가 역산
             const avgPrice = item.count > 0 ? (item.investment / item.count) : 0;
-            const currentPrice = item.currentPrice || (item.count > 0 ? (item.currentVal / item.count) : 0);
-            
-            document.getElementById('stock-avg').value = avgPrice;
-            document.getElementById('stock-current').value = currentPrice;
-        } 
-        else if (type === 'rent') {
+            document.getElementById('stock-avg').value = avgPrice;         
+        }else if (type === 'rent') {
             document.getElementById('rent-type').value = item.type;
             document.getElementById('rent-deposit').value = item.deposit;
             document.getElementById('rent-monthly').value = item.monthly;
@@ -521,5 +523,56 @@ async function fetchStockPrice(ticker) {
     } catch (error) {
         console.error("API 호출 에러:", error);
         return 0;
+    }
+}
+
+// --- 수동 & 자동 현재가 일괄 업데이트 로직 ---
+
+// 1. 보유 중인 모든 주식의 가격을 업데이트하는 함수
+window.updateAllStockPrices = async function(isAuto = false) {
+    if (!currentDbData.stock || currentDbData.stock.length === 0) {
+        if(!isAuto) alert("등록된 주식이 없습니다.");
+        return;
+    }
+    
+    const btn = document.getElementById('btn-update-prices');
+    if(btn) { btn.innerText = "업데이트 중..."; btn.disabled = true; }
+
+    let updatedCount = 0;
+    
+    for (const item of currentDbData.stock) {
+        if (item.ticker) {
+            const newPrice = await fetchStockPrice(item.ticker);
+            // 가져온 가격이 0보다 크고, 기존에 저장된 가격과 다를 때만 파이어베이스 업데이트 실행
+            if (newPrice > 0 && newPrice !== item.currentPrice) {
+                await updateDoc(doc(db, "stock", item.id), {
+                    currentPrice: newPrice,
+                    currentVal: newPrice * item.count
+                });
+                updatedCount++;
+            }
+        }
+    }
+    
+    if(btn) { btn.innerText = "🔄 현재가 수동 업데이트"; btn.disabled = false; }
+    if(!isAuto) alert(`총 ${updatedCount}개 종목의 최신 가격이 반영되었습니다.`);
+};
+
+// 2. 매일 오후 4시 이후 앱 실행 시 자동 업데이트를 체크하는 함수
+function checkAfternoonAutoUpdate() {
+    const now = new Date();
+    // 오후 4시(16시) 이후인지 확인
+    if (now.getHours() >= 16) {
+        const todayStr = now.toDateString(); // 예: "Tue May 14 2026"
+        const lastUpdate = localStorage.getItem('lastStockUpdate');
+        
+        // 오늘 4시 이후에 업데이트를 한 적이 없다면? -> 자동 업데이트 실행
+        if (lastUpdate !== todayStr) {
+            console.log("장 마감 이후 최초 접속 감지. 주식 데이터 자동 업데이트를 시작합니다.");
+            updateAllStockPrices(true).then(() => {
+                // 성공적으로 마치면 내 브라우저에 '오늘 업데이트 완료' 도장 찍기
+                localStorage.setItem('lastStockUpdate', todayStr);
+            });
+        }
     }
 }
