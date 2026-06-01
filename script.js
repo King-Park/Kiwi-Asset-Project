@@ -521,14 +521,49 @@ function updateDashboard() {
             chart.style.background = `conic-gradient(${grad.join(', ')})`;
         }
     }
+ 
+// --- 5. 개인 차트 실행 ---
+    // 1. 당월 예적금 총액 및 미결제 지출(부채) 계산
+    const currentBankSum = bankP.filter(i => i.month === nowMonth).reduce((s, i) => s + i.amount, 0);
+    const netBankSum = currentBankSum - cardTotalP; 
+    
+    // 2. 미결제 지출 항목 카드명별 분류
+    const unpaidCards = currentDbData.card
+        .filter(i => i.month === nowMonth && !i.isPublic)
+        .filter(i => !paidCardSigs.includes(`${i.month}_${i.name}`));
+        
+    const cardSums = {};
+    unpaidCards.forEach(i => {
+        const cardName = i.name || '미지정 카드';
+        cardSums[cardName] = (cardSums[cardName] || 0) + i.amount;
+    });
 
-    // --- 5. 개인 차트 실행 ---
-    // 444~448번째 줄 수정: 차트도 당월 기준으로 통일
+    // 3. 차트 데이터 구성 (주식, 보증금 기본 유지)
     const personalData = [
         { label: '국내/외 주식', val: stockP.filter(i => i.month === nowMonth).reduce((s, i) => s + i.currentVal, 0), color: '#1A3636' },
-        { label: '예적금',       val: bankP.filter(i => i.month === nowMonth).reduce((s, i) => s + i.amount, 0),      color: '#C3F400' },
         { label: '보증금',       val: rentP.filter(i => i.month === nowMonth).reduce((s, i) => s + i.deposit, 0),     color: '#5E7171' }
     ];
+
+    // 4. 예적금 항목 추가 (마이너스가 아닐 경우에만 표시)
+    if (netBankSum > 0) {
+        personalData.push({ label: '예적금', val: netBankSum, color: '#C3F400' });
+    }
+
+    // 5. 지출 항목을 카드명 기준으로 붉은색 계열로 추가
+    const redPalette = ['#EF4444', '#F87171', '#FCA5A5', '#B91C1C', '#991B1B', '#7F1D1D'];
+    let colorIndex = 0;
+    
+    for (const [cardName, sum] of Object.entries(cardSums)) {
+        if (sum > 0) {
+            personalData.push({
+                label: `지출(${cardName})`,
+                val: sum,
+                color: redPalette[colorIndex % redPalette.length]
+            });
+            colorIndex++;
+        }
+    }
+    
     drawChart('asset-donut-chart', 'donut-legend', personalData);
 
     // --- 6. 공금 차트 실행 ---
