@@ -256,6 +256,7 @@ window.addFinalCardAmount = async function() {
     const name = document.getElementById('card-final-name').value;
     const finalAmount = Number(document.getElementById('card-final-amount').value);
     const isPaid = document.getElementById('card-final-isPaid').checked;
+    const isPublic = document.getElementById('card-final-isPublic').checked;
     const currentSum = currentDbData.card.filter(i => i.month === month && i.name === name && i.cat !== 'not set').reduce((s, i) => s + i.amount, 0);
     
     if (finalAmount <= currentSum) {
